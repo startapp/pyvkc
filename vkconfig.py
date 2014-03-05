@@ -19,4 +19,8 @@ PNM_TEMP = '.pnm/'
 #Максимальна ширина окна профиля если без фото.
 INFO_MAX_WIDTH=350
 
+PHOTOLIST_ROWS = 3
+PHOTOLIST_COLS = 3
+PHOTOLIST_SIZE = 'src'
+
 DEBUG=1
