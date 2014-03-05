@@ -140,21 +140,33 @@ class BigJoint:
 
 	def cmd_photos(self, album, uid=None):
 		cpage=1
-		pages=1
-		def page_next():
-			if cpage<=pages:
+		def next_page():
+			global cpage
+			if cpage<page_cnt:
 				cpage += 1
 				change_page(cpage)
+		def prev_page():
+			global cpage
+			if cpage>1:
+				cpage -= 1
+				change_page(cpage)
 		def change_page(page):
+			global cpage
 			cpage = page
+			cp_lbl.config(text='Страница: %d из %d'%(cpage, page_cnt))
 			page -= 1
 			for i in xrange(0, PHOTOLIST_ROWS):
 				for j in xrange(0, PHOTOLIST_COLS):
 					try:
-						photos_grid[i][j].photo = load_image(pages[page][i*PHOTOLIST_ROWS+j]['src_small'])
+						print i, j, ':', page, i*PHOTOLIST_COLS+j
+						photos_grid[i][j].photo = load_image(pages[page][i*PHOTOLIST_COLS+j][PHOTOLIST_SIZE])
 						photos_grid[i][j].config(image = photos_grid[i][j].photo)
 					except:
-						photos_grid[i][j].config(image = None, text='')
+						try:
+							if USE_PNM: photos_grid[i][j].photo.blank()
+							else:
+								photos_grid[i][j].photo = ImageTk.PhotoImage('RGBA', '1x1')
+						except: pass
 		aid = album['aid']
 		alb_wnd = Toplevel(self.wnd)
 		alb_wnd.resizable(False, False)
@@ -170,21 +182,27 @@ class BigJoint:
 		for i in xrange(0, PHOTOLIST_ROWS):
 			photos_grid += [[]]
 			for j in xrange(0, PHOTOLIST_COLS):
-				photos_grid[i] += [Label(alb_frame, text='img[%d][%d]'%(i,j))]
+				print i, j
+				photos_grid[i] += [Label(alb_frame)]
 				photos_grid[i][j].grid(row=i, column=j)
-		print 'PHCNT=%d'%len(photos)
 		page_capacity = PHOTOLIST_ROWS*PHOTOLIST_COLS
-		print 'PCAP=%d'%page_capacity
 		page_cnt = len(photos)/page_capacity+1
-		print 'PGCNT=%d'%page_cnt
 		pages = []
 		for i in xrange(0, page_cnt):
 			pages += [[]]
-			print 'Generating page: %d'%i
 			for j in xrange(0, page_capacity):
 				try:
 					pages[i] += [photos[i*page_capacity+j]]
+					print i, j, i*page_capacity+j
 				except: break
+		btn_frame = Frame(alb_wnd)
+		pp_btn = Button(btn_frame, text='<-', command=prev_page)
+		pp_btn.grid(row=0, column=0)
+		np_btn = Button(btn_frame, text='->', command=next_page)
+		np_btn.grid(row=0, column=2)
+		cp_lbl = Label(btn_frame)
+		cp_lbl.grid(row=0, column=1)
+		btn_frame.pack()
 		change_page(1)
 
 
