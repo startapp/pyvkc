@@ -19,7 +19,7 @@ import helpers
 
 MY_APPNAME = 'PyVKC'
 
-def download_user(url): #TODO: диалог скачивания, использование внешних программ
+def download_user(url):
 	return helpers.DM.down_file(url)
 
 def _dtpn(udict):
@@ -169,18 +169,25 @@ class BigJoint:
 		view_btn = Button(buttons_frame, text=u'Смотреть', command=lambda: self.cmd_photos(dalbums[alb_listbox.get(ACTIVE)], uid))
 		view_btn.pack(side=LEFT, fill=BOTH, expand=1)
 		if EXTRA_FUNC:
-			view_btn = Button(buttons_frame, text=u'Проставить', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
-			view_btn.pack(side=LEFT, fill=BOTH, expand=1)
+			lkall_btn = Button(buttons_frame, text=u'Проставить', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
+			lkall_btn.pack(side=LEFT, fill=BOTH, expand=1)
 		buttons_frame.pack(side=BOTTOM)
 
 	def cmd_photos(self, album, uid=None):
 		cpage=1
 			
 		def photo_popup(event, photo):
-			popup = Menu(alb_wnd, tearoff=0)
-			popup.add_command(label='Скачать', command=lambda: download_user(photo[PHOTOSAVE_SIZE]))
-			popup.add_command(label='LIKE: %s'%str(self.agent.likes.isLiked(type='photo', item_id=photo['pid'], owner_id=photo['owner_id'])), command=lambda:self.like_toggle(type='photo', item_id=photo['pid'], owner_id=photo['owner_id']))
-			popup.tk_popup(event.x_root, event.y_root, 0)
+			def cmdwrap(mtd, *args, **kwargs):
+				popup.destroy()
+				mtd(*args, **kwargs)
+			popup = Toplevel(alb_wnd)
+			popup.title('Фото')
+			popup.resizable(False, False)
+			dwn_btn=Button(popup, text='Скачать', command=lambda: cmdwrap(download_user, photo[SAVE_SIZE]))
+			like_btn = Button(popup, text='LIKE: %s'%str(self.agent.likes.isLiked(type='photo', item_id=photo['pid'], owner_id=photo['owner_id'])), command=lambda: cmdwrap(self.like_toggle, type='photo', item_id=photo['pid'], owner_id=photo['owner_id']))
+			dwn_btn.pack()
+			like_btn.pack()
+			
 
 		def next_page():
 			global cpage
