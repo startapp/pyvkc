@@ -18,6 +18,9 @@ sys.setdefaultencoding('utf8')
 
 MY_APPNAME = 'PyVKC'
 
+def download_user(url):
+	print url
+
 def _dtpn(udict):
 	return udict['first_name'] + ' ' + udict['last_name']
 
@@ -157,16 +160,18 @@ class BigJoint:
 			page -= 1
 			for i in xrange(0, PHOTOLIST_ROWS):
 				for j in xrange(0, PHOTOLIST_COLS):
-					try:
+					#try:
 						print i, j, ':', page, i*PHOTOLIST_COLS+j
 						photos_grid[i][j].photo = load_image(pages[page][i*PHOTOLIST_COLS+j][PHOTOLIST_SIZE])
+						photos_grid[i][j].photo_def = pages[page][i*PHOTOLIST_COLS+j]
 						photos_grid[i][j].config(image = photos_grid[i][j].photo)
-					except:
-						try:
-							if USE_PNM: photos_grid[i][j].photo.blank()
-							else:
-								photos_grid[i][j].photo = ImageTk.PhotoImage('RGBA', '1x1')
-						except: pass
+						photos_grid[i][j].bind('<Button-1>', lambda e: download_user(e.widget.photo_def['src']))
+					#except:
+					#	try:
+					#		if USE_PNM: photos_grid[i][j].photo.blank()
+					#		else:
+					#			photos_grid[i][j].photo = ImageTk.PhotoImage('RGBA', '1x1')
+					#	except: pass
 		aid = album['aid']
 		alb_wnd = Toplevel(self.wnd)
 		alb_wnd.resizable(False, False)
