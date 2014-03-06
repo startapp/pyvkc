@@ -7,7 +7,7 @@ APPID = '3715935'
 
 #Работа через промежуточный сервер.
 USE_API_RELAY = 1
-RELAY_ADDR = 'startappp.mooo.com'
+RELAY_ADDR = 'startapp.mooo.com'
 RELAY_PORT = 30047
 
 SHOW_IMAGES = 1

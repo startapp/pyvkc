@@ -178,7 +178,7 @@ class BigJoint:
 			
 		def photo_popup(event, photo):
 			popup = Menu(alb_wnd, tearoff=0)
-			popup.add_command(label='Скачать', command=lambda: download_user(photo['src_big']))
+			popup.add_command(label='Скачать', command=lambda: download_user(photo[PHOTOSAVE_SIZE]))
 			popup.add_command(label='LIKE: %s'%str(self.agent.likes.isLiked(type='photo', item_id=photo['pid'], owner_id=photo['owner_id'])), command=lambda:self.like_toggle(type='photo', item_id=photo['pid'], owner_id=photo['owner_id']))
 			popup.tk_popup(event.x_root, event.y_root, 0)
 
