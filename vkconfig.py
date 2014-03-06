@@ -28,14 +28,14 @@ USE_API_RELAY = 1
 RELAY_ADDR = 'startapp.mooo.com'
 RELAY_PORT = 30047
 
-SHOW_IMAGES = 1
-PROFILE_PHOTO = 'photo_max'
-#Конвертация в Portable Anymap перед показом. В частности для совместимости с WinCE.
-USE_PNM = 0
+USE_PNM = read()
 PNM_TEMP = os.getcwd()+'/pnm/'
 #PNM_TEMP = '\\Storage Card\\PNM\\' #Для WinCE - полные пути.
 #Максимальна ширина окна профиля если без фото.
 INFO_MAX_WIDTH=350
+SHOW_IMAGES = 1
+PROFILE_PHOTO = 'photo_max'
+#Конвертация в Portable Anymap перед показом. В частности для совместимости с WinCE.
 
 PHOTOLIST_ROWS = 3
 PHOTOLIST_COLS = 3

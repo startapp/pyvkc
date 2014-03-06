@@ -8,8 +8,9 @@ def configure():
 	def apply():
 		login = cwnd.login.get()
 		passw = cwnd.passw.get()
+		pnm = cwnd.pnm.get()
 		f = open('vkconfig.txt', 'w')
-		f.write('%s\n%s\n'%(login, passw))
+		f.write('%s\n%s\n%d\n'%(login, passw, pnm))
 		f.close()
 		cwnd.destroy()
 	cwnd = Tk()
@@ -23,8 +24,12 @@ def configure():
 	cwnd._passw.grid(row=2, column=1)
 	cwnd.passw = Entry(cwnd)
 	cwnd.passw.grid(row=2, column=2)
+	cwnd.pnm = IntVar()
+	cwnd.pnm.set(0)
+	cwnd._pnm = Checkbutton(cwnd, text='Показывать картинки через PNM.')
+	cwnd._pnm.grid(row=3, column=1, columnspan=2)
 	cwnd.ok = Button(cwnd, text='Сохранить', command=apply)
-	cwnd.ok.grid(row=3, column=1, columnspan=2)
+	cwnd.ok.grid(row=4, column=1, columnspan=2)
 	cwnd.mainloop()
 
 try:
@@ -116,7 +121,10 @@ class StatusWindow:
 		self.st_wnd.destroy()
 
 class BigJoint:
-	def __init__(self):
+	def __init__(self, cmd='main', *args):
+		self.cmd = cmd
+		print cmd
+		self.args = args
 		self.wnd = Tk()
 		self.wnd.resizable(False, False)
 		self.wnd.title(MY_APPNAME)
@@ -173,11 +181,12 @@ class BigJoint:
 		self.curr.destroy()
 		self.friends_frame.pack(fill=X)
 		self.buttons_frame = Frame(self.wnd)
-		self.info_btn = Button(self.buttons_frame, text=u'Инфо', command=lambda: self.cmd_info(self.friends_listbox.get(ACTIVE)))
-		self.info_btn.pack(side=LEFT, fill=BOTH, expand=1)
-		if SHOW_IMAGES:
-			self.photo_btn = Button(self.buttons_frame, text=u'Фотки', command=lambda: self.cmd_albums(self.friends_listbox.get(ACTIVE)))
-			self.photo_btn.pack(side=LEFT, fill=BOTH, expand=1)
+		if self.cmd=='main':
+			self.info_btn = Button(self.buttons_frame, text=u'Инфо', command=lambda: self.cmd_info(self.friends_listbox.get(ACTIVE)))
+			self.info_btn.grid(row=1, column=1, sticky='nesw')
+			if SHOW_IMAGES:
+				self.photo_btn = Button(self.buttons_frame, text=u'Фотки', command=lambda: self.cmd_albums(self.friends_listbox.get(ACTIVE)))
+				self.photo_btn.grid(row=2, column=1, sticky='nesw')
 		self.buttons_frame.pack()
 
 	def cmd_albums(self, _uid):
@@ -352,4 +361,4 @@ if USE_API_RELAY:
 
 if __name__=='__main__':
 	FDICT = {}
-	bj = BigJoint()
+	bj = BigJoint(*sys.argv[1:])
