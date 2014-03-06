@@ -15,6 +15,7 @@ import time
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
+import os
 import helpers
 
 MY_APPNAME = 'PyVKC'
@@ -42,6 +43,12 @@ def load_image(url):
 	photo_file.close()
 	photo_stream.close()
 	return res
+
+def open_user(url, ft='std'):
+	fn = OPEN_TMPDIR+'/'+helpers.DM.urllib2.posixpath.basename(url)
+	helpers.DM.down(url, fn)
+	if OPEN_XDG:
+		os.system('xdg-open "%s"'%fn)
 
 def _nti(name):
 	try: return int(name)
@@ -155,7 +162,6 @@ class BigJoint:
 		self.buttons_frame.pack()
 
 	def cmd_albums(self, _uid):
-
 		def like_all(album):
 			photos = _get_album_photos(self.agent, album['aid'], uid)
 			for p in photos:
@@ -203,7 +209,6 @@ class BigJoint:
 
 	def cmd_photos(self, album, uid=None):
 		cpage=1
-			
 		def photo_popup(event, photo):
 			def cmdwrap(mtd, *args, **kwargs):
 				popup.destroy()
@@ -212,6 +217,8 @@ class BigJoint:
 			popup.title('Фото')
 			popup.resizable(False, False)
 			dwn_btn=Button(popup, text='Скачать', command=lambda: cmdwrap(download_user, photo[SAVE_SIZE]))
+			open_btn=Button(popup, text='Открыть', command=lambda: cmdwrap(open_user, photo[SAVE_SIZE]))
+			open_btn.pack()
 			like_btn = Button(popup, text='LIKE: %s'%str(self.agent.likes.isLiked(type='photo', item_id=photo['pid'], owner_id=photo['owner_id'])), command=lambda: cmdwrap(self.like_toggle, type='photo', item_id=photo['pid'], owner_id=photo['owner_id']))
 			dwn_btn.pack()
 			like_btn.pack()

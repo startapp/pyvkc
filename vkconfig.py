@@ -16,13 +16,17 @@ PROFILE_PHOTO = 'photo_max'
 USE_PNM = 1
 PNM_TEMP = '.pnm/'
 #PNM_TEMP = '\\Storage Card\\PNM\\' #Для WinCE - полные пути.
-#Максимальная ширина окна профиля если без фото.
+#Максимальна ширина окна профиля если без фото.
 INFO_MAX_WIDTH=350
 
 PHOTOLIST_ROWS = 3
 PHOTOLIST_COLS = 3
 PHOTOLIST_SIZE = 'src'
 SAVE_SIZE = 'src_big'
+
+OPEN_XDG = 1
+OPEN_WIN = 0 #unimpl.
+OPEN_TMPDIR = '.opentmp'
 
 #Разрешить дополнительные функции (проставить лайки в автом. режиме, например)
 EXTRA_FUNC = 1
