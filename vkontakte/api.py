@@ -87,20 +87,15 @@ class _API(object):
         self.defaults = defaults
         self.method_prefix = ''
 
-    def _get(self, method, timeout=DEFAULT_TIMEOUT, **kwargs):
+    def _get(self, method, timeout=DEFAULT_TIMEOUT, sig = None, raw=0, **kwargs):
         if USE_API_RELAY == 0:
-            status, response = self._request(method, timeout=timeout, **kwargs)
+            status, response = self._request(method, timeout=timeout, sig=sig, **kwargs)
             if not (200 <= status <= 299):
                 raise VKError({
                     'error_code': status,
                     'error_msg': "HTTP error",
                     'request_params': kwargs,
                 })
-
-            data = json.loads(response, strict=False)
-            if "error" in data:
-                raise VKError(data["error"])
-            return data['response']
         else: #This is SWEET BREAD, not the code...
             relay = RELAY_SOCK_FILE;
             relay.write('REQE\n%s\n'%method);
@@ -117,6 +112,20 @@ class _API(object):
                     resp = relay.read(leng)
                     return json.loads(resp, strict=False)
                 else: raise VKError('RELAY ERR.')
+        data = json.loads(response, strict=False)
+        if "error" in data:
+        #some vodka for my abstinent code...
+            if int(data['error']['error_code']) == 5:
+                import re
+                s=re.findall('\'.+\'', data['error']['error_msg'])[0][1:-1]
+                sig=md5(s+self.api_secret).hexdigest()
+                return self._get(method, timeout=DEFAULT_TIMEOUT, sig = sig, **kwargs)
+            else:
+                if raw: return data
+                raise VKError(data["error"])
+        if raw: return data
+        return data['response']
+        
 
     def __getattr__(self, name):
         '''
@@ -130,16 +139,16 @@ class _API(object):
         # the magic to convert instance attributes into method names
         return partial(self, method=name)
 
-    def __call__(self, **kwargs):
+    def __call__(self, sig=None, raw=0, **kwargs):
         method = kwargs.pop('method')
         params = self.defaults.copy()
         params.update(kwargs)
-        return self._get(self.method_prefix + method, **params)
+        return self._get(self.method_prefix + method, sig=sig, **params)
 
     def _signature(self, meth, params):
         return signature(self.api_secret, meth, params)
 
-    def _request(self, method, timeout=DEFAULT_TIMEOUT, **kwargs):
+    def _request(self, method, timeout=DEFAULT_TIMEOUT, sig=None, **kwargs):
 
         for key, value in kwargs.iteritems():
             kwargs[key] = _encode(value)
@@ -151,7 +160,9 @@ class _API(object):
             )
             params.update(kwargs)
             params['timestamp'] = int(time.time())
-            if self.api_secret: params['sig'] = self._signature(method, params)
+            if self.api_secret: 
+				if sig==None: params['sig'] = self._signature(method, params)
+				else: params['sig'] = sig
             url = SECURE_API_URL + method
             secure = False
         else:

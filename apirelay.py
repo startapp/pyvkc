@@ -38,7 +38,7 @@ def session(sock, addr):
 					kwargs[key]=value
 				elif c2 == 'ENDP':
 					kwargs['method']=method
-					resp = json.dumps(vk_api.__call__(**kwargs))
+					resp = json.dumps(vk_api.__call__(raw=1, **kwargs))
 					cf.write('ANSW\n')
 					cf.write('%d\n'%len(resp))
 					cf.write(resp)

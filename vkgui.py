@@ -15,11 +15,12 @@ import time
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
+import helpers
 
 MY_APPNAME = 'PyVKC'
 
-def download_user(url):
-	print url
+def download_user(url): #TODO: диалог скачивания, использование внешних программ
+	return helpers.DM.down_file(url)
 
 def _dtpn(udict):
 	return udict['first_name'] + ' ' + udict['last_name']
@@ -60,7 +61,7 @@ def _get_album_photos(agent, aid, uid=None):
 	return ssw
 
 def auth():
-	scope = "friends,photos"
+	scope = "friends,photos,wall"
 	if not USE_API_RELAY:
 		(token, uid, secret) = vk_auth.auth(LOGIN, PASS, APPID, scope+",nohttps")
 		agent = vkontakte.API(token=token, api_secret=secret)
@@ -94,6 +95,28 @@ class BigJoint:
 #		except:
 			#return
 
+	def like_set(self, **kwargs):
+		il = int(self.agent.likes.isLiked(**kwargs))
+		if il==0:
+			self.agent.likes.add(**kwargs)
+	def like_set_all(self, type, owner_id, items):
+		for i in items:
+			print 'Like set to: '+type+str(i)
+			like_set(type=type, owner_id=owner_id, item_id=i)
+
+	def like_unset(self, **kwargs):
+		il = int(self.agent.likes.isLiked(**kwargs))
+		if il==1:
+			self.agent.likes.delete(**kwargs)
+
+	def like_toggle(self, **kwargs):
+		il = int(self.agent.likes.isLiked(**kwargs))
+		if il==0:
+			self.agent.likes.add(**kwargs)
+		elif il==1:
+			self.agent.likes.delete(**kwargs)
+		il = self.agent.likes.isLiked(**kwargs)
+
 	def friends_init(self):
 		global FDICT
 		self.friends_frame = Frame(self.wnd)
@@ -120,6 +143,12 @@ class BigJoint:
 		self.buttons_frame.pack()
 
 	def cmd_albums(self, _uid):
+
+		def like_all(album):
+			photos = _get_album_photos(self.agent, album['aid'], uid)
+			for p in photos:
+				self.like_set(type='photo', owner_id=uid, item_id=p['pid'])
+
 		uid = _nti(_uid)
 		alb_wnd = Toplevel(self.wnd)
 		alb_wnd.resizable(False, False)
@@ -139,10 +168,20 @@ class BigJoint:
 		buttons_frame = Frame(alb_wnd)
 		view_btn = Button(buttons_frame, text=u'Смотреть', command=lambda: self.cmd_photos(dalbums[alb_listbox.get(ACTIVE)], uid))
 		view_btn.pack(side=LEFT, fill=BOTH, expand=1)
+		if EXTRA_FUNC:
+			view_btn = Button(buttons_frame, text=u'Проставить', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
+			view_btn.pack(side=LEFT, fill=BOTH, expand=1)
 		buttons_frame.pack(side=BOTTOM)
 
 	def cmd_photos(self, album, uid=None):
 		cpage=1
+			
+		def photo_popup(event, photo):
+			popup = Menu(alb_wnd, tearoff=0)
+			popup.add_command(label='Скачать', command=lambda: download_user(photo['src_big']))
+			popup.add_command(label='LIKE: %s'%str(self.agent.likes.isLiked(type='photo', item_id=photo['pid'], owner_id=photo['owner_id'])), command=lambda:self.like_toggle(type='photo', item_id=photo['pid'], owner_id=photo['owner_id']))
+			popup.tk_popup(event.x_root, event.y_root, 0)
+
 		def next_page():
 			global cpage
 			if cpage<page_cnt:
@@ -160,18 +199,20 @@ class BigJoint:
 			page -= 1
 			for i in xrange(0, PHOTOLIST_ROWS):
 				for j in xrange(0, PHOTOLIST_COLS):
-					#try:
+					try:
+					#if 1:
 						print i, j, ':', page, i*PHOTOLIST_COLS+j
 						photos_grid[i][j].photo = load_image(pages[page][i*PHOTOLIST_COLS+j][PHOTOLIST_SIZE])
 						photos_grid[i][j].photo_def = pages[page][i*PHOTOLIST_COLS+j]
 						photos_grid[i][j].config(image = photos_grid[i][j].photo)
-						photos_grid[i][j].bind('<Button-1>', lambda e: download_user(e.widget.photo_def['src']))
-					#except:
-					#	try:
-					#		if USE_PNM: photos_grid[i][j].photo.blank()
-					#		else:
-					#			photos_grid[i][j].photo = ImageTk.PhotoImage('RGBA', '1x1')
-					#	except: pass
+						photos_grid[i][j].bind('<Button-1>', lambda e: photo_popup(e, e.widget.photo_def))
+					except:
+					#else:
+						try:
+							if USE_PNM: photos_grid[i][j].photo.blank()
+							else:
+								photos_grid[i][j].photo = ImageTk.PhotoImage('RGBA', '1x1')
+						except: pass
 		aid = album['aid']
 		alb_wnd = Toplevel(self.wnd)
 		alb_wnd.resizable(False, False)
