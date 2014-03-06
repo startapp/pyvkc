@@ -1,8 +1,38 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from vkconfig import *
+MY_APPNAME = 'PyVKC'
+
 from Tkinter import *
+def configure():
+	def apply():
+		login = cwnd.login.get()
+		passw = cwnd.passw.get()
+		f = open('vkconfig.txt', 'w')
+		f.write('%s\n%s\n'%(login, passw))
+		f.close()
+		cwnd.destroy()
+	cwnd = Tk()
+	cwnd.resizable(False, False)
+	cwnd.title('Настройка %s'%MY_APPNAME)
+	cwnd._login = Label(cwnd, text='E-mail/Phone: ')
+	cwnd._login.grid(row=1, column=1)
+	cwnd.login = Entry(cwnd)
+	cwnd.login.grid(row=1, column=2)
+	cwnd._passw = Label(cwnd, text='Пароль: ')
+	cwnd._passw.grid(row=2, column=1)
+	cwnd.passw = Entry(cwnd)
+	cwnd.passw.grid(row=2, column=2)
+	cwnd.ok = Button(cwnd, text='Сохранить', command=apply)
+	cwnd.ok.grid(row=3, column=1, columnspan=2)
+	cwnd.mainloop()
+
+try:
+	from vkconfig import *
+except:
+	configure()
+	from vkconfig import *
+
 import vkontakte
 if not USE_API_RELAY:
 	import vk_auth
@@ -17,11 +47,6 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 import os
 import helpers
-
-MY_APPNAME = 'PyVKC'
-
-def download_user(url):
-	return helpers.DM.down_file(url)
 
 def _dtpn(udict):
 	return udict['first_name'] + ' ' + udict['last_name']
@@ -43,12 +68,6 @@ def load_image(url):
 	photo_file.close()
 	photo_stream.close()
 	return res
-
-def open_user(url, ft='std'):
-	fn = OPEN_TMPDIR+'/'+helpers.DM.urllib2.posixpath.basename(url)
-	helpers.DM.down(url, fn)
-	if OPEN_XDG:
-		os.system('xdg-open "%s"'%fn)
 
 def _nti(name):
 	try: return int(name)
@@ -216,13 +235,12 @@ class BigJoint:
 			popup = Toplevel(alb_wnd)
 			popup.title('Фото')
 			popup.resizable(False, False)
-			dwn_btn=Button(popup, text='Скачать', command=lambda: cmdwrap(download_user, photo[SAVE_SIZE]))
-			open_btn=Button(popup, text='Открыть', command=lambda: cmdwrap(open_user, photo[SAVE_SIZE]))
+			dwn_btn=Button(popup, text='Скачать', command=lambda: cmdwrap(helpers.DM.down_file, photo[SAVE_SIZE]))
+			open_btn=Button(popup, text='Открыть', command=lambda: cmdwrap(helpers.DM.open_user, photo[SAVE_SIZE]))
 			open_btn.pack()
 			like_btn = Button(popup, text='LIKE: %s'%str(self.agent.likes.isLiked(type='photo', item_id=photo['pid'], owner_id=photo['owner_id'])), command=lambda: cmdwrap(self.like_toggle, type='photo', item_id=photo['pid'], owner_id=photo['owner_id']))
 			dwn_btn.pack()
 			like_btn.pack()
-			
 
 		def next_page():
 			global cpage
@@ -332,5 +350,6 @@ if USE_API_RELAY:
 	RELAY_SOCK_FILE = vkontakte.api.RELAY_SOCK_FILE
 	print "Using relay server: "+RELAY_SOCK_FILE.readline()
 
-FDICT = {}
-bj = BigJoint()
+if __name__=='__main__':
+	FDICT = {}
+	bj = BigJoint()

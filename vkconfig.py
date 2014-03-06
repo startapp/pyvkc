@@ -1,8 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-LOGIN = ''
-PASS = ''
+import os
+
+config_filename = 'vkconfig.txt'
+config = open(config_filename, 'r')
+
+def read():
+	global config
+	while True:
+		l = config.readline().strip()
+		if l=='': continue
+		try:
+			l = l.substr(0, l.index('#'))
+			l=l.strip()
+		except: pass
+		print l
+		if l!='': return l
+		
+
+LOGIN = read()
+PASS = read()
 APPID = '3715935'
 
 #Работа через промежуточный сервер.
@@ -13,8 +31,8 @@ RELAY_PORT = 30047
 SHOW_IMAGES = 1
 PROFILE_PHOTO = 'photo_max'
 #Конвертация в Portable Anymap перед показом. В частности для совместимости с WinCE.
-USE_PNM = 1
-PNM_TEMP = '.pnm/'
+USE_PNM = 0
+PNM_TEMP = os.getcwd()+'/pnm/'
 #PNM_TEMP = '\\Storage Card\\PNM\\' #Для WinCE - полные пути.
 #Максимальна ширина окна профиля если без фото.
 INFO_MAX_WIDTH=350
@@ -24,11 +42,17 @@ PHOTOLIST_COLS = 3
 PHOTOLIST_SIZE = 'src'
 SAVE_SIZE = 'src_big'
 
-OPEN_XDG = 1
-OPEN_WIN = 0 #unimpl.
-OPEN_TMPDIR = '.opentmp'
+OPEN_XDG = 0
+OPEN_WIN_OSSF = 1
+OPEN_TMPDIR = os.path.join(os.getcwd(), 'opentmp', '')
 
 #Разрешить дополнительные функции (проставить лайки в автом. режиме, например)
 EXTRA_FUNC = 1
 
 DEBUG=1
+
+#make tmp dirs
+try: os.mkdir(OPEN_TMPDIR)
+except: pass
+try: os.mkdir(PNM_TEMP)
+except: pass
