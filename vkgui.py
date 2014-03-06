@@ -77,6 +77,18 @@ def auth():
 		agent = vkontakte.API()	
 	return token, uid, secret, agent
 
+class StatusWindow:
+	def __init__(self, parent, title):
+		self.st_wnd = Toplevel(parent)
+		self.st_wnd.resizable(False, False)
+		self.st_lbl = Label(self.st_wnd)
+		self.st_lbl.pack()
+	def set(self, string):
+		self.st_lbl.config(text=string)
+		self.st_wnd.update()
+	def destroy(self):
+		self.st_wnd.destroy()
+
 class BigJoint:
 	def __init__(self):
 		self.wnd = Tk()
@@ -149,6 +161,20 @@ class BigJoint:
 			for p in photos:
 				self.like_set(type='photo', owner_id=uid, item_id=p['pid'])
 
+		def download_all(album):
+			photos = _get_album_photos(self.agent, album['aid'], uid)
+			count = len(photos)
+			st = StatusWindow(alb_wnd, 'Сохраненяю фото...')
+			st.set('Создаю список ссылок... Всего %d файлов.'%count)
+			urls = []
+			for i in xrange(len(photos)):
+				urls+=[photos[i][SAVE_SIZE]]
+				print photos[i][SAVE_SIZE]
+				st.set('Создаю список ссылок... %d/%d.'%(i, count))
+			st.set('Начинаю закачку.')
+			helpers.DM.down_dir(urls, statusCb=lambda x: st.set('Загружаю %d/%d...'%(x+1, count)))
+			st.destroy()
+
 		uid = _nti(_uid)
 		alb_wnd = Toplevel(self.wnd)
 		alb_wnd.resizable(False, False)
@@ -167,10 +193,12 @@ class BigJoint:
 			dalbums[a['title']] = a
 		buttons_frame = Frame(alb_wnd)
 		view_btn = Button(buttons_frame, text=u'Смотреть', command=lambda: self.cmd_photos(dalbums[alb_listbox.get(ACTIVE)], uid))
-		view_btn.pack(side=LEFT, fill=BOTH, expand=1)
+		view_btn.grid(row=1, column=1)
+		dwnall_btn = Button(buttons_frame, text=u'Скачать', command=lambda: download_all(dalbums[alb_listbox.get(ACTIVE)]))
+		dwnall_btn.grid(row=1, column=2)
 		if EXTRA_FUNC:
 			lkall_btn = Button(buttons_frame, text=u'Проставить', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
-			lkall_btn.pack(side=LEFT, fill=BOTH, expand=1)
+			lkall_btn.grid(row=2, column=1, columnspan=2, sticky='nesw')
 		buttons_frame.pack(side=BOTTOM)
 
 	def cmd_photos(self, album, uid=None):
