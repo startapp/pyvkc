@@ -26,7 +26,7 @@ def configure():
 	cwnd.passw.grid(row=2, column=2)
 	cwnd.pnm = IntVar()
 	cwnd.pnm.set(0)
-	cwnd._pnm = Checkbutton(cwnd, text='Показывать картинки через PNM.')
+	cwnd._pnm = Checkbutton(cwnd, text='Показывать картинки через PNM.', variable=pnm)
 	cwnd._pnm.grid(row=3, column=1, columnspan=2)
 	cwnd.ok = Button(cwnd, text='Сохранить', command=apply)
 	cwnd.ok.grid(row=4, column=1, columnspan=2)
@@ -92,7 +92,7 @@ def _get_album_photos(agent, aid, uid=None):
 	return ssw
 
 def auth():
-	scope = "friends,photos,wall"
+	scope = "friends,photos,messages,wall"
 	if not USE_API_RELAY:
 		(token, uid, secret) = vk_auth.auth(LOGIN, PASS, APPID, scope+",nohttps")
 		agent = vkontakte.API(token=token, api_secret=secret)
@@ -184,9 +184,14 @@ class BigJoint:
 		if self.cmd=='main':
 			self.info_btn = Button(self.buttons_frame, text=u'Инфо', command=lambda: self.cmd_info(self.friends_listbox.get(ACTIVE)))
 			self.info_btn.grid(row=1, column=1, sticky='nesw')
+			self.msg_btn = Button(self.buttons_frame, text=u'Отправить сообщение', command=lambda: self.cmd_sendmsg(self.friends_listbox.get(ACTIVE)))
+			self.msg_btn.grid(row=1, column=2, sticky='nesw')
 			if SHOW_IMAGES:
 				self.photo_btn = Button(self.buttons_frame, text=u'Фотки', command=lambda: self.cmd_albums(self.friends_listbox.get(ACTIVE)))
-				self.photo_btn.grid(row=2, column=1, sticky='nesw')
+				self.photo_btn.grid(row=2, column=1, columnspan=2, sticky='nesw')
+			if EXTRA_FUNC:
+				self.sendall_btn = Button(self.buttons_frame, text=u'Рассылка сообщений', command=lambda: self.cmd_sendmsgtoall())
+				self.sendall_btn.grid(row=3, column=1, columnspan=2, sticky='nesw')
 		self.buttons_frame.pack()
 
 	def cmd_albums(self, _uid):
@@ -350,6 +355,81 @@ class BigJoint:
 			info_25dimetoxy_4bromo_amphetamine = Label(info_frame, text=u'Дата рождения: '+user['bdate']) #DOB
 			info_25dimetoxy_4bromo_amphetamine.pack(anchor=W)
 
+	def cmd_sendmsg(self, _uid):
+		def cmd_ok():
+			txt = msg_tb.get(0.0, END)
+			print 'MSG:',txt
+			self.agent.messages.send(uid=uid, message=txt)
+			msg_wnd.destroy()
+
+		uid = _nti(_uid)
+		msg_wnd = Toplevel(self.wnd)
+		msg_wnd.resizable(False, False)
+		msg_wnd.title(u'Отправить %s - %s'%(_uid, MY_APPNAME))
+		msg_frame = Frame(msg_wnd)
+		msg_frame.pack(side=TOP, fill=BOTH)
+		msg_scrollbar = Scrollbar(msg_frame, orient=VERTICAL)
+		msg_tb = Text(msg_frame, yscrollcommand=msg_scrollbar.set)
+		msg_scrollbar.config(command=msg_tb.yview)
+		msg_scrollbar.pack(side=RIGHT, fill=Y)
+		msg_tb.pack(side=LEFT, fill=BOTH, expand=1)
+		buttons_frame = Frame(msg_wnd)
+		snd_btn = Button(buttons_frame, text=u'Ок', command=lambda: cmd_ok())
+		snd_btn.grid(row=1, column=1)
+		buttons_frame.pack(side=BOTTOM)
+
+	def cmd_sendmsgtoall(self):
+		def cmd_ok():
+			modeGS = gsVar.get()
+			modeG = gVar.get()
+			modeB = bVar.get()
+			drFlag = drVar.get()
+			delay = 0.25
+			txt = msg_tb.get(0.0, END)
+			print 'Message: ', txt
+			print 'modeGS=',modeGS, ';modeB=',modeB, ';modeG=',modeG, ';drFlag=',drFlag, ';delay=',delay
+			users = self.agent.users.get(user_ids=(','.join(map(str, FDICT.values()))), fields='sex,bdate,city,country,photo_50,photo_100,photo_200_orig,photo_200,photo_400_orig,photo_max,photo_max_orig,online,online_mobile,lists,domain,has_mobile,contacts,connections,site,education,universities,schools,can_post,can_see_all_posts,can_see_audio,can_write_private_message,status,last_seen,common_count,relation,relatives,counters')
+			for user in users:
+				print 'Checking: (',user['uid'],') -',_dtpn(user)
+				sndFlag = 0
+				if modeGS:
+					if modeG and user['sex']==1: sndFlag=1
+					if modeB and user['sex']==2: sndFlag=1
+				else:
+					sndFlag=1
+				print 'sndFlag=',sndFlag
+				if sndFlag and not drFlag: self.agent.messages.send(uid=user['uid'], message=txt)
+				time.sleep(delay)
+			msg_wnd.destroy()
+
+		msg_wnd = Toplevel(self.wnd)
+		msg_wnd.resizable(False, False)
+		msg_wnd.title(u'Рассылка - %s'%(MY_APPNAME))
+		msg_frame = Frame(msg_wnd)
+		msg_frame.pack(side=TOP, fill=BOTH)
+		msg_scrollbar = Scrollbar(msg_frame, orient=VERTICAL)
+		msg_tb = Text(msg_frame, yscrollcommand=msg_scrollbar.set)
+		msg_scrollbar.config(command=msg_tb.yview)
+		msg_scrollbar.pack(side=RIGHT, fill=Y)
+		msg_tb.pack(side=LEFT, fill=BOTH, expand=1)
+		buttons_frame = Frame(msg_wnd)
+		snd_btn = Button(buttons_frame, text=u'Ок', command=lambda: cmd_ok())
+		gsVar = IntVar()
+		gsVar.set(1)
+		gVar = IntVar()
+		gVar.set(0)
+		gCb = Checkbutton(buttons_frame, text=u'Отправлять девкам', variable=gVar)
+		bVar = IntVar()
+		bVar.set(0)
+		bCb = Checkbutton(buttons_frame, text=u'Отправлять пацанам', variable=bVar)
+		drVar = IntVar()
+		drVar.set(1)
+		drCb = Checkbutton(buttons_frame, text=u'Симулировать отправку', variable=drVar)
+		gCb.grid(row=1, column=1, columnspan=2)
+		bCb.grid(row=2, column=1, columnspan=2)
+		drCb.grid(row=3, column=1, columnspan=2)
+		snd_btn.grid(row=5, column=1, columnspan=2)
+		buttons_frame.pack(side=BOTTOM)
 
 
 if USE_API_RELAY:

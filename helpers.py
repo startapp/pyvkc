@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from vkconfig import *
-import urllib, urlparse
+import urllib2, urlparse
 import os
 import tkFileDialog
 from vkontakte.api import json
