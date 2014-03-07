@@ -23,6 +23,9 @@ LOGIN = read()
 PASS = read()
 APPID = '3715935'
 
+#Разрешить дополнительные функции (проставить лайки в автом. режиме, например)
+EXTRA_FUNC = read()
+
 #Работа через промежуточный сервер.
 USE_API_RELAY = 1
 RELAY_ADDR = 'startapp.mooo.com'
@@ -42,12 +45,9 @@ PHOTOLIST_COLS = 3
 PHOTOLIST_SIZE = 'src'
 SAVE_SIZE = 'src_big'
 
-OPEN_XDG = 0
-OPEN_WIN_OSSF = 1
+OPEN_XDG = 1
+OPEN_WIN_OSSF = 0
 OPEN_TMPDIR = os.path.join(os.getcwd(), 'opentmp', '')
-
-#Разрешить дополнительные функции (проставить лайки в автом. режиме, например)
-EXTRA_FUNC = 1
 
 DEBUG=1
 
