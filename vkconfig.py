@@ -12,7 +12,7 @@ def read():
 		l = config.readline().strip()
 		if l=='': continue
 		try:
-			l = l.substr(0, l.index('#'))
+			l = l[0:l.index('#')]
 			l=l.strip()
 		except: pass
 		print l
@@ -23,15 +23,7 @@ LOGIN = read()
 PASS = read()
 APPID = '3715935'
 
-#Разрешить дополнительные функции (проставить лайки в автом. режиме, например)
-EXTRA_FUNC = read()
-
-#Работа через промежуточный сервер.
-USE_API_RELAY = 1
-RELAY_ADDR = 'startapp.mooo.com'
-RELAY_PORT = 30047
-
-USE_PNM = read()
+USE_PNM = int(read())
 PNM_TEMP = os.getcwd()+'/pnm/'
 #PNM_TEMP = '\\Storage Card\\PNM\\' #Для WinCE - полные пути.
 #Максимальна ширина окна профиля если без фото.
@@ -45,8 +37,19 @@ PHOTOLIST_COLS = 3
 PHOTOLIST_SIZE = 'src'
 SAVE_SIZE = 'src_big'
 
-OPEN_XDG = 1
-OPEN_WIN_OSSF = 0
+#Разрешить дополнительные функции (проставить лайки в автом. режиме, например)
+EXTRA_FUNC = int(read())
+
+#Работа через промежуточный сервер.
+USE_API_RELAY = 1
+RELAY_ADDR = 'startapp.mooo.com'
+RELAY_PORT = 30047
+
+OPEN_XDG = 0
+OPEN_OSSF = 0
+OPEN_METHOD = read()
+if OPEN_METHOD == 'xdg': OPEN_XDG = 1
+if OPEN_METHOD == 'osst': OPEN_OSSF = 1
 OPEN_TMPDIR = os.path.join(os.getcwd(), 'opentmp', '')
 
 DEBUG=1

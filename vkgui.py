@@ -9,30 +9,47 @@ def configure():
 		login = cwnd.login.get()
 		passw = cwnd.passw.get()
 		pnm = cwnd.pnm.get()
+		extf = cwnd.extf.get()
+		openm = cwnd.openvar.get()
 		f = open('vkconfig.txt', 'w')
-		f.write('%s\n%s\n%d\n'%(login, passw, pnm))
+		f.write('#Не меняйте строки местами!\n%s #login\n%s #password\n%d #image to pnm\n%d #extra functions\n%s #open method\n'%(login, passw, pnm, extf, openm))
 		f.close()
 		cwnd.destroy()
 	cwnd = Tk()
 	cwnd.resizable(False, False)
 	cwnd.title('Настройка %s'%MY_APPNAME)
 	cwnd._login = Label(cwnd, text='E-mail/Phone: ')
-	cwnd._login.grid(row=1, column=1)
+	cwnd._login.grid(row=1, column=1, sticky='w')
 	cwnd.login = Entry(cwnd)
-	cwnd.login.grid(row=1, column=2)
+	cwnd.login.grid(row=1, column=2, sticky='we')
 	cwnd._passw = Label(cwnd, text='Пароль: ')
-	cwnd._passw.grid(row=2, column=1)
+	cwnd._passw.grid(row=2, column=1, sticky='w')
 	cwnd.passw = Entry(cwnd)
-	cwnd.passw.grid(row=2, column=2)
+	cwnd.passw.grid(row=2, column=2, sticky='we')
 	cwnd.pnm = IntVar()
 	cwnd.pnm.set(0)
-	cwnd._pnm = Checkbutton(cwnd, text='Показывать картинки через PNM.', variable=cmd.pnm)
+	cwnd._pnm = Checkbutton(cwnd, text='Показывать картинки через PNM.', variable=cwnd.pnm)
 	cwnd.extf = IntVar()
 	cwnd.extf.set(0)
-	cwnd._extf = Checkbutton(cwnd, text='Дополнительные функции.', variable=cmd.extf)
-	cwnd._pnm.grid(row=3, column=1, columnspan=2)
+	cwnd._extf = Checkbutton(cwnd, text='Включить дополнительные функции', variable=cwnd.extf)
+	cwnd._pnm.grid(row=3, column=1, columnspan=2, sticky='w')
+	cwnd._extf.grid(row=4, column=1, columnspan=2, sticky='w')
+	cwnd.openmethods = {
+		'Открывать файлы через xdg-open (UNIX)': 'xdg',
+		'Открывать файлы через os.startfile (WINDOWS)': 'ossf',
+	}
+	cwnd.openvar = Listbox(cwnd, height=3)
+	map(lambda x: cwnd.openvar.insert(END, x), cwnd.openmethods.keys())
+	cwnd.openvar = StringVar()
+	cwnd.openvar.set('xdg')
+	row = 4
+	for l,v in cwnd.openmethods.iteritems():
+		rb = Radiobutton(cwnd, text=l, variable=cwnd.openvar, value=v)
+		row+=1
+		rb.grid(row=row, column=1, columnspan=2, sticky='w')
 	cwnd.ok = Button(cwnd, text='Сохранить', command=apply)
-	cwnd.ok.grid(row=4, column=1, columnspan=2)
+	row += 1
+	cwnd.ok.grid(row=row, column=1, columnspan=2)
 	cwnd.mainloop()
 
 try:
@@ -55,6 +72,8 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 import os
 import helpers
+
+LAST_SCOPETS = "friends,photos,messages,wall"
 
 def _dtpn(udict):
 	return udict['first_name'] + ' ' + udict['last_name']
@@ -95,7 +114,7 @@ def _get_album_photos(agent, aid, uid=None):
 	return ssw
 
 def auth():
-	scope = "friends,photos,messages,wall"
+	scope = LAST_SCOPETS
 	if not USE_API_RELAY:
 		(token, uid, secret) = vk_auth.auth(LOGIN, PASS, APPID, scope+",nohttps")
 		agent = vkontakte.API(token=token, api_secret=secret)
@@ -239,7 +258,7 @@ class BigJoint:
 		dwnall_btn = Button(buttons_frame, text=u'Скачать', command=lambda: download_all(dalbums[alb_listbox.get(ACTIVE)]))
 		dwnall_btn.grid(row=1, column=2)
 		if EXTRA_FUNC:
-			lkall_btn = Button(buttons_frame, text=u'Проставить', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
+			lkall_btn = Button(buttons_frame, text=u'Лайкнуть все фотки', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
 			lkall_btn.grid(row=2, column=1, columnspan=2, sticky='nesw')
 		buttons_frame.pack(side=BOTTOM)
 

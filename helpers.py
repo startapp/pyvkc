@@ -94,7 +94,7 @@ def open_user(fn):
 	print fn
 	if OPEN_XDG:
 		os.system('xdg-open "%s"'%fn)
-	elif OPEN_WIN_OSSF:
+	elif OPEN_OSSF:
 		os.startfile(fn)
 
 def upload(url, ff, fn):
