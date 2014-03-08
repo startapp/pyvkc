@@ -92,10 +92,12 @@ class BuiltinDManager:
 
 def open_user(fn):
 	print fn
-	if OPEN_XDG:
+	if OPEN_METHOD=='xdg':
 		os.system('xdg-open "%s"'%fn)
-	elif OPEN_OSSF:
+	elif OPEN_METHOD=='ossf':
 		os.startfile(fn)
+	else:
+		print 'NOTOPEN'
 
 def upload(url, ff, fn):
 	f=codecs.open(fn, 'rb', 'latin1')
