@@ -168,13 +168,16 @@ class _API(object):
         try:
             return self._get(self.method_prefix + method, sig=sig, **params)
         except VKError, e:
-            if int(e.code()==14):
+            if int(e.code==14):
                 csid = e.error['captcha_sid']
                 ckey = self.captcha_callback(e.error['captcha_img'])
                 kwargs.update({
                     'captcha_sid': csid,
                     'captcha_key': ckey
                 })
+                return self.__call__(sig, **kwargs)
+            if int(e.code==6):
+                time.sleep(1)
                 return self.__call__(sig, **kwargs)
             raise
 

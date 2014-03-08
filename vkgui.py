@@ -141,9 +141,10 @@ def auth():
 	return token, uid, secret, agent
 
 class StatusWindow:
-	def __init__(self, parent, title):
+	def __init__(self, parent, title='status'):
 		self.st_wnd = Toplevel(parent)
 		self.st_wnd.resizable(False, False)
+		self.st_wnd.title(title)
 		self.st_lbl = Label(self.st_wnd)
 		self.st_lbl.pack()
 	def set(self, string):
@@ -223,7 +224,7 @@ class BigJoint:
 		self.friends_scrollbar.pack(side=RIGHT, fill=Y)
 		self.friends_listbox.pack(side=LEFT, fill=BOTH, expand=1)
 		self.friends = self.agent.friends.get(fields="uid,first_name,last_name", order="hints")
-		FDICT = {u'Я': self.uid}
+		FDICT = {u'Я': int(self.uid)}
 		self.friends_listbox.insert(END, u'Я')
 		for f in self.friends:
 			fn = f['first_name']+' '+f['last_name']
@@ -244,19 +245,15 @@ class BigJoint:
 				self.photo_btn.grid(row=3, column=1, columnspan=2, sticky='nesw')
 			if EXTRA_FUNC:
 				self.sendall_btn = Button(self.buttons_frame, text=u'Рассылка сообщений', command=lambda: self.cmd_sendmsgtoall())
-				self.sendall_btn.grid(row=4, column=1, columnspan=2, sticky='nesw')
+				self.sendall_btn.grid(row=4, column=1, sticky='nesw')
+				self.histall_btn = Button(self.buttons_frame, text=u'Сохранить все переписки', command=lambda: self.cmd_showhist(self.friends_listbox.get(ACTIVE), all=1))
+				self.histall_btn.grid(row=4, column=2, sticky='nesw')
 		self.buttons_frame.pack()
 
-	def cmd_albums(self, _uid):
-		def like_all(album):
-			photos = _get_album_photos(self.agent, album['aid'], uid)
-			for p in photos:
-				self.like_set(type='photo', owner_id=uid, item_id=p['pid'])
-
-		def download_all(album):
+	def download_album(self, album):
 			photos = _get_album_photos(self.agent, album['aid'], uid)
 			count = len(photos)
-			st = StatusWindow(alb_wnd, 'Сохраненяю фото...')
+			st = StatusWindow(self.wnd, 'Сохраненяю фото...')
 			st.set('Создаю список ссылок... Всего %d файлов.'%count)
 			urls = []
 			for i in xrange(len(photos)):
@@ -266,6 +263,13 @@ class BigJoint:
 			st.set('Начинаю закачку.')
 			helpers.DM.down_dir(urls, statusCb=lambda x: st.set('Загружаю %d/%d...'%(x+1, count)))
 			st.destroy()
+
+
+	def cmd_albums(self, _uid):
+		def like_all(album):
+			photos = _get_album_photos(self.agent, album['aid'], uid)
+			for p in photos:
+				self.like_set(type='photo', owner_id=uid, item_id=p['pid'])
 
 		uid = _nti(_uid)
 		alb_wnd = Toplevel(self.wnd)
@@ -286,7 +290,7 @@ class BigJoint:
 		buttons_frame = Frame(alb_wnd)
 		view_btn = Button(buttons_frame, text=u'Смотреть', command=lambda: self.cmd_photos(dalbums[alb_listbox.get(ACTIVE)], uid))
 		view_btn.grid(row=1, column=1)
-		dwnall_btn = Button(buttons_frame, text=u'Скачать', command=lambda: download_all(dalbums[alb_listbox.get(ACTIVE)]))
+		dwnall_btn = Button(buttons_frame, text=u'Скачать', command=lambda: self.download_album(dalbums[alb_listbox.get(ACTIVE)]))
 		dwnall_btn.grid(row=1, column=2)
 		if EXTRA_FUNC:
 			lkall_btn = Button(buttons_frame, text=u'Лайкнуть все фотки', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
@@ -453,13 +457,26 @@ class BigJoint:
 					buf+=u'%s> %s\n'%(printname, m['body'])
 		return _emojidel(buf)
 
-	def cmd_showhist(self, _uid):
-		def save():
-			fn = helpers.FPICKER.save_one(title=u'Сохранить переписку', fn='dialog %s.txt'%_uid)
+	def cmd_showhist(self, _uid, all=0):
+		def save(history, fn=''):
+			if fn=='':
+				fn = helpers.FPICKER.save_one(title=u'Сохранить переписку', fn='dialog %s.txt'%_uid)
 			f = open(fn, 'wb')
-			f.write(msgh_tb.get(0.0, END))
+			f.write(history)
 			f.close()
+		def save_all():
+			savedir=helpers.FPICKER.choose_dir(title='Сохранить переписки')
+			hist_sw=StatusWindow(self.wnd, title='Сохранение переписок')
+			count = len(FDICT.keys())
+			curr = 0
+			for name, uid in FDICT.iteritems():
+				curr += 1
+				hist_sw.set('Сохраняю - %s (%d/%d)'%(name, curr, count))
+				history = self._getmsghist(uid, name, rev=1, status_cb=lambda x, x2: hist_sw.set('Сохраняю - %s (%d/%d), %d/%d...'%(name, curr, count, x, x2)))
+				save(fn=savedir+'/'+name+'.txt', history=history)
+			hist_sw.destroy()
 		uid = _nti(_uid)
+		if all: return save_all()
 		hist_sw=StatusWindow(self.wnd, title='Переписка с %s'%_uid)
 		hist_sw.set('Загружаю сообщения...')
 		history = self._getmsghist(uid, _uid, rev=1, status_cb=lambda x, x2: hist_sw.set('Загужено %s/%s сообщений...'%(x, x2)))
@@ -476,7 +493,7 @@ class BigJoint:
 		msgh_tb.pack(side=LEFT, fill=BOTH, expand=1)
 		msgh_tb.insert(END, history)
 		buttons_frame = Frame(msg_wnd)
-		save_btn = Button(buttons_frame, text='Сохранить', command=lambda: save())
+		save_btn = Button(buttons_frame, text='Сохранить', command=lambda: save(history=msgh_tb.get(0.0, END)))
 		save_btn.pack(side=LEFT)
 		buttons_frame.pack(side=BOTTOM)
 
