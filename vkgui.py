@@ -156,7 +156,7 @@ class StatusWindow:
 	def destroy(self):
 		self.st_wnd.destroy()
 
-class BigJoint:
+class GovnoMaydannoe:
 	def __init__(self, Z='main', *args):
 		self.cmd = Z
 		self.args = args
@@ -609,4 +609,4 @@ if USE_API_RELAY:
 
 if __name__=='__main__':
 	FDICT = {}
-	bj = BigJoint(*sys.argv[1:])
+	bj = GovnoMaydannoe(*sys.argv[1:])
