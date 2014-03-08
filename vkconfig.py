@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 
-CSD=os.path.split(__file__)[0]
-print CSD
+CSD=os.path.split(os.path.realpath(sys.argv[0]))[0]
+print 'Config: ', CSD
 config_filename = os.path.join(CSD, 'vkconfig.txt')
 config = open(config_filename, 'r')
 

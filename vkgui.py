@@ -12,7 +12,7 @@ def configure():
 		pnm = cwnd.pnm.get()
 		extf = cwnd.extf.get()
 		openm = cwnd.openvar.get()
-		CSD=os.path.split(__file__)[0]
+		CSD=os.path.split(os.path.realpath(sys.argv[0]))[0]
 		config_filename = os.path.join(CSD, 'vkconfig.txt')
 		f = open(config_filename, 'w')
 		f.write('#Не меняйте строки местами!\n%s #login\n%s #password\n%d #image to pnm\n%d #extra functions\n%s #open method\n'%(login, passw, pnm, extf, openm))
