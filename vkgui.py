@@ -250,7 +250,7 @@ class BigJoint:
 				self.histall_btn.grid(row=4, column=2, sticky='nesw')
 		self.buttons_frame.pack()
 
-	def download_album(self, album):
+	def download_album(self, uid, album):
 			photos = _get_album_photos(self.agent, album['aid'], uid)
 			count = len(photos)
 			st = StatusWindow(self.wnd, 'Сохраненяю фото...')
@@ -290,7 +290,7 @@ class BigJoint:
 		buttons_frame = Frame(alb_wnd)
 		view_btn = Button(buttons_frame, text=u'Смотреть', command=lambda: self.cmd_photos(dalbums[alb_listbox.get(ACTIVE)], uid))
 		view_btn.grid(row=1, column=1)
-		dwnall_btn = Button(buttons_frame, text=u'Скачать', command=lambda: self.download_album(dalbums[alb_listbox.get(ACTIVE)]))
+		dwnall_btn = Button(buttons_frame, text=u'Скачать', command=lambda: self.download_album(uid, dalbums[alb_listbox.get(ACTIVE)]))
 		dwnall_btn.grid(row=1, column=2)
 		if EXTRA_FUNC:
 			lkall_btn = Button(buttons_frame, text=u'Лайкнуть все фотки', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
