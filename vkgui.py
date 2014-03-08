@@ -72,8 +72,18 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 import os
 import helpers
+import re
 
 LAST_SCOPETS = "friends,photos,messages,wall"
+
+def _emojidel(txt):
+	try:
+	    # UCS-4
+	    highpoints = re.compile(u'[\U00010000-\U0010ffff]')
+	except re.error:
+	    # UCS-2
+	    highpoints = re.compile(u'[\uD800-\uDBFF][\uDC00-\uDFFF]')
+	return highpoints.sub(u'\u25FD', txt)
 
 def _dtpn(udict):
 	return udict['first_name'] + ' ' + udict['last_name']
@@ -224,15 +234,17 @@ class BigJoint:
 		self.buttons_frame = Frame(self.wnd)
 		if self.cmd=='main':
 			self.info_btn = Button(self.buttons_frame, text=u'Инфо', command=lambda: self.cmd_info(self.friends_listbox.get(ACTIVE)))
-			self.info_btn.grid(row=1, column=1, sticky='nesw')
-			self.msg_btn = Button(self.buttons_frame, text=u'Отправить сообщение', command=lambda: self.cmd_sendmsg(self.friends_listbox.get(ACTIVE)))
-			self.msg_btn.grid(row=1, column=2, sticky='nesw')
+			self.info_btn.grid(row=1, column=1, columnspan=2, sticky='nesw')
+			self.msg_btn = Button(self.buttons_frame, text=u'Отправить сбщ.', command=lambda: self.cmd_sendmsg(self.friends_listbox.get(ACTIVE)))
+			self.msg_btn.grid(row=2, column=1, sticky='nesw')
+			self.hist_btn = Button(self.buttons_frame, text=u'История', command=lambda: self.cmd_showhist(self.friends_listbox.get(ACTIVE)))
+			self.hist_btn.grid(row=2, column=2, sticky='nesw')
 			if SHOW_IMAGES:
 				self.photo_btn = Button(self.buttons_frame, text=u'Фотки', command=lambda: self.cmd_albums(self.friends_listbox.get(ACTIVE)))
-				self.photo_btn.grid(row=2, column=1, columnspan=2, sticky='nesw')
+				self.photo_btn.grid(row=3, column=1, columnspan=2, sticky='nesw')
 			if EXTRA_FUNC:
 				self.sendall_btn = Button(self.buttons_frame, text=u'Рассылка сообщений', command=lambda: self.cmd_sendmsgtoall())
-				self.sendall_btn.grid(row=3, column=1, columnspan=2, sticky='nesw')
+				self.sendall_btn.grid(row=4, column=1, columnspan=2, sticky='nesw')
 		self.buttons_frame.pack()
 
 	def cmd_albums(self, _uid):
@@ -417,6 +429,47 @@ class BigJoint:
 		buttons_frame = Frame(msg_wnd)
 		snd_btn = Button(buttons_frame, text=u'Ок', command=lambda: cmd_ok())
 		snd_btn.grid(row=1, column=1)
+		buttons_frame.pack(side=BOTTOM)
+
+	def _getmsghist(self, uid, printname, **kwargs):
+		buf = u''
+		msgs = self.agent.messages.getHistory(uid=uid, offset=0, **kwargs)
+		count = msgs[0]
+		curr=0
+		buf += u'Переписка с %s, uid=%d, всего %d сообщений.\n'%(printname, uid, count)
+		while curr<count:
+			msgs = self.agent.messages.getHistory(uid=uid, offset=curr, count=200, **kwargs)
+			msgs = msgs[1:]
+			buf += u'OFFSET %d:\n'%(curr)
+			curr += 200
+			for m in msgs:
+				if m['out']:
+					buf+=u'Я> %s\n'%(m['body'])	
+				else:
+					buf+=u'%s> %s\n'%(printname, m['body'])
+		return _emojidel(buf)
+
+	def cmd_showhist(self, _uid):
+		def save():
+			fn = helpers.FPICKER.save_one(title=u'Сохранить переписку', fn='dialog %s.txt'%_uid)
+			f = open(fn, 'wb')
+			f.write(msgh_tb.get(0.0, END))
+			f.close()
+		uid = _nti(_uid)
+		msg_wnd = Toplevel(self.wnd)
+		msg_wnd.resizable(False, False)
+		msg_wnd.title(u'Переписка с %s - %s'%(_uid, MY_APPNAME))
+		msgh_frame = Frame(msg_wnd)
+		msgh_frame.pack(side=TOP, fill=BOTH)
+		msgh_scrollbar = Scrollbar(msgh_frame, orient=VERTICAL)
+		msgh_tb = Text(msgh_frame, yscrollcommand=msgh_scrollbar.set)
+		msgh_scrollbar.config(command=msgh_tb.yview)
+		msgh_scrollbar.pack(side=RIGHT, fill=Y)
+		msgh_tb.pack(side=LEFT, fill=BOTH, expand=1)
+		msgh_tb.insert(END, self._getmsghist(uid, _uid, rev=1))
+		buttons_frame = Frame(msg_wnd)
+		save_btn = Button(buttons_frame, text='Сохранить', command=lambda: save())
+		save_btn.pack(side=LEFT)
 		buttons_frame.pack(side=BOTTOM)
 
 	def cmd_sendmsgtoall(self):
