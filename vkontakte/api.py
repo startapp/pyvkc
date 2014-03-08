@@ -176,7 +176,7 @@ class _API(object):
                     'captcha_key': ckey
                 })
                 return self.__call__(sig, **kwargs)
-            if int(e.code==6):
+            if int(e.code)==6:
                 time.sleep(1)
                 return self.__call__(sig, **kwargs)
             raise
