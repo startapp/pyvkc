@@ -9,10 +9,10 @@ import socket
 import vk_auth
 from vkontakte.api import json
 from threading import Thread
+import sys
 
 def session(sock, addr):
-	sock.send("Vk API RELAY at startapp's home by startapp; DN\n")
-	print 'Connected: '+str(addr)
+	sock.send("\n")
 	cf = sock.makefile()
 	while 1:
 		c = cf.readline().strip()

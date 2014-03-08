@@ -81,6 +81,10 @@ class _API(object):
             if not (api_id and api_secret or token):
                 raise ValueError("Arguments api_id and api_secret or token are required")
 
+        def captcha_callback(self, imgurl):
+            print imgurl
+            return raw_input()
+
         self.api_id = api_id
         self.api_secret = api_secret
         self.token = token
@@ -109,8 +113,7 @@ class _API(object):
                 relay.flush()
                 if relay.readline().strip() == 'ANSW':
                     leng = int(relay.readline().strip())
-                    resp = relay.read(leng)
-                    return json.loads(resp, strict=False)
+                    response = relay.read(leng)
                 else: raise VKError('RELAY ERR.')
         data = json.loads(response, strict=False)
         if "error" in data:
@@ -143,7 +146,18 @@ class _API(object):
         method = kwargs.pop('method')
         params = self.defaults.copy()
         params.update(kwargs)
-        return self._get(self.method_prefix + method, sig=sig, **params)
+        try:
+            return self._get(self.method_prefix + method, sig=sig, raw=raw, **params)
+        except VKError, e:
+            if int(e.code()==14):
+                csid = e.error['captcha_sid']
+                ckey = self.captcha_callback(e.error['captcha_img'])
+                kwargs.update({
+                    'captcha_sid': csid,
+                    'captcha_key': ckey
+                })
+                return self.__call__(sig, raw, **kwargs)
+            raise
 
     def _signature(self, meth, params):
         return signature(self.api_secret, meth, params)
@@ -161,8 +175,8 @@ class _API(object):
             params.update(kwargs)
             params['timestamp'] = int(time.time())
             if self.api_secret: 
-				if sig==None: params['sig'] = self._signature(method, params)
-				else: params['sig'] = sig
+                if sig==None: params['sig'] = self._signature(method, params)
+                else: params['sig'] = sig
             url = SECURE_API_URL + method
             secure = False
         else:

@@ -158,10 +158,28 @@ class BigJoint:
 #		Все равно толку нет.
 #		try:
 			self.token, self.uid, self.secret, self.agent = auth()
+			self.agent.captcha_callback = self.show_captcha
 			self.curr.config(text=u'Вход успешен. uid=%s'%self.uid)
 			self.friends_init()
 #		except:
 			#return
+
+	def show_captcha(self, img):
+		def ok():
+			self.captcha_key = txt_entr.get().strip()
+			captcha_wnd.destroy()
+		captcha_wnd = Toplevel()
+		captcha_wnd.resizable(False, False)
+		image = load_image(img)
+		cp_label = Label(captcha_wnd, text=u'Введите текст с картинки:')
+		cp_label.pack(side=LEFT)
+		img_label = Label(captcha_wnd, side=BOTTOM)
+		img_label.pack(side=BOTTOM)
+		txt_entr = Entry(captcha_wnd)
+		txt_entr.pack(side=BOTTOM, expand=1)
+		ok_btn = Button(captcha_wnd, text='Ок', command=lambda: ok())
+		self.wnd.wait_window(captcha_wnd)
+		return self.captcha_key
 
 	def like_set(self, **kwargs):
 		il = int(self.agent.likes.isLiked(**kwargs))
