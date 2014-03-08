@@ -93,7 +93,7 @@ class _API(object):
 
     def _get(self, method, timeout=DEFAULT_TIMEOUT, sig = None, raw=0, **kwargs):
         if USE_API_RELAY == 0:
-            status, response = self._request(method, timeout=timeout, sig=sig, **kwargs)
+            status, response = self._request(method, timeout=timeout, sig=sig, raw=0, **kwargs)
             if not (200 <= status <= 299):
                 raise VKError({
                     'error_code': status,
@@ -116,6 +116,7 @@ class _API(object):
                     response = relay.read(leng)
                 else: raise VKError('RELAY ERR.')
         data = json.loads(response, strict=False)
+        if isinstance(data, int): return data
         if "error" in data:
         #some vodka for my abstinent code...
             if int(data['error']['error_code']) == 5:
