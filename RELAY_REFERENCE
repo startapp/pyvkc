@@ -4,3 +4,22 @@
 Для вызова метода API - посылаем "REQE", затем название метода. Сервер ответит "OK", посылаем параметры в таком формате: "PAPA\nНАЗВАНИЕ ПАРАМЕНТРА\nДЛИНА ЗНАЧЕНИЯ\nЗНАЧЕНИЕ". Когда переданы параметры, отсылаем "ENDP", сервер ответит "ANSW", покажет длину и выдаст ответ ВК в формате JSON.
 В конце концов отсылаем "QUIT" и сервер разрывает сокет.
 
+Пример:
+<Hello string. Ignore me.
+>LOG1
+>email passwd app_id
+>friends,messages
+<access_token user_id api_secret
+>REQE
+>friends.get
+<OK
+>PARA
+>order
+>5
+>hints
+>ENDP
+<ANSW
+<30
+<{"response":[1,6492,35828305]}
+<QUIT
+
