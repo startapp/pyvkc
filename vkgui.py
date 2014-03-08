@@ -173,7 +173,8 @@ class BigJoint:
 		image = load_image(img)
 		cp_label = Label(captcha_wnd, text=u'Введите текст с картинки:')
 		cp_label.pack(side=LEFT)
-		img_label = Label(captcha_wnd, side=BOTTOM)
+		img_label = Label(captcha_wnd, image=image)
+		img_label.image = image
 		img_label.pack(side=BOTTOM)
 		txt_entr = Entry(captcha_wnd)
 		txt_entr.pack(side=BOTTOM, expand=1)
