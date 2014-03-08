@@ -15,7 +15,7 @@ def read():
 			l = l[0:l.index('#')]
 			l=l.strip()
 		except: pass
-		print l
+		print repr(l)
 		if l!='': return l
 		
 
@@ -48,8 +48,7 @@ RELAY_PORT = 30047
 OPEN_XDG = 0
 OPEN_OSSF = 0
 OPEN_METHOD = read()
-if OPEN_METHOD == 'xdg': OPEN_XDG = 1
-if OPEN_METHOD == 'osst': OPEN_OSSF = 1
+print 'OM=', repr(OPEN_METHOD)
 OPEN_TMPDIR = os.path.join(os.getcwd(), 'opentmp', '')
 
 DEBUG=1

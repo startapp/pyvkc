@@ -406,7 +406,7 @@ class BigJoint:
 			modeG = gVar.get()
 			modeB = bVar.get()
 			drFlag = drVar.get()
-			delay = 0.25
+			delay = 5
 			txt = msg_tb.get(0.0, END)
 			print 'Message: ', txt
 			print 'modeGS=',modeGS, ';modeB=',modeB, ';modeG=',modeG, ';drFlag=',drFlag, ';delay=',delay
@@ -420,8 +420,9 @@ class BigJoint:
 				else:
 					sndFlag=1
 				print 'sndFlag=',sndFlag
-				if sndFlag and not drFlag: self.agent.messages.send(uid=user['uid'], message=txt)
-				time.sleep(delay)
+				if sndFlag and not drFlag:
+					self.agent.messages.send(uid=user['uid'], message=txt)
+					time.sleep(delay)
 			msg_wnd.destroy()
 
 		msg_wnd = Toplevel(self.wnd)
