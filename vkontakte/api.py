@@ -91,9 +91,13 @@ class _API(object):
         self.defaults = defaults
         self.method_prefix = ''
 
-    def _get(self, method, timeout=DEFAULT_TIMEOUT, sig = None, raw=0, **kwargs):
+    def _get(self, method, timeout=DEFAULT_TIMEOUT, sig = None, **kwargs):
+        raw = kwargs['raw']
+        print '95raw: ',raw
         if USE_API_RELAY == 0:
-            status, response = self._request(method, timeout=timeout, sig=sig, raw=0, **kwargs)
+            print 'req'
+            status, response = self._request(method, timeout=timeout, sig=sig, **kwargs)
+            print 'answ'
             if not (200 <= status <= 299):
                 raise VKError({
                     'error_code': status,
@@ -104,6 +108,7 @@ class _API(object):
             relay = RELAY_SOCK_FILE;
             relay.write('REQE\n%s\n'%method);
             relay.flush()
+            print 'req'
             if relay.readline().strip()=='OK':
                 for key, value in kwargs.iteritems():
                     relay.write('PARA\n')
@@ -111,11 +116,20 @@ class _API(object):
                     relay.write(str(value))
                 relay.write('ENDP\n')
                 relay.flush()
+                print 'params'
                 if relay.readline().strip() == 'ANSW':
+                    print 'answ'
                     leng = int(relay.readline().strip())
+                    print 'len=',leng
                     response = relay.read(leng)
+                    print 'read'
                 else: raise VKError('RELAY ERR.')
         data = json.loads(response, strict=False)
+        print 'meth=', method
+        print 'params=', kwargs
+        print 'raw=',raw
+        print 'response:'
+        print data
         if isinstance(data, int): return data
         if "error" in data:
         #some vodka for my abstinent code...
@@ -143,12 +157,16 @@ class _API(object):
         # the magic to convert instance attributes into method names
         return partial(self, method=name)
 
-    def __call__(self, sig=None, raw=0, **kwargs):
+    def __call__(self, sig=None, **kwargs):
+        raw = 0
+        try: raw = kwargs['raw']
+        except: kwargs['raw']=0
+        print '153raw: ', raw
         method = kwargs.pop('method')
         params = self.defaults.copy()
         params.update(kwargs)
         try:
-            return self._get(self.method_prefix + method, sig=sig, raw=raw, **params)
+            return self._get(self.method_prefix + method, sig=sig, **params)
         except VKError, e:
             if int(e.code()==14):
                 csid = e.error['captcha_sid']
@@ -157,15 +175,16 @@ class _API(object):
                     'captcha_sid': csid,
                     'captcha_key': ckey
                 })
-                return self.__call__(sig, raw, **kwargs)
+                return self.__call__(sig, **kwargs)
             raise
 
     def _signature(self, meth, params):
         return signature(self.api_secret, meth, params)
 
     def _request(self, method, timeout=DEFAULT_TIMEOUT, sig=None, **kwargs):
-
+        print 'req_'
         for key, value in kwargs.iteritems():
+            print key, value
             kwargs[key] = _encode(value)
 
         if self.token:
