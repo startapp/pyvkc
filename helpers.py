@@ -7,7 +7,9 @@ import os
 import tkFileDialog
 from vkontakte.api import json
 import codecs
-import requests as r
+CAN_UPLOAD=1
+try: import requests as r
+except: CAN_UPLOAD = 0
 
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
