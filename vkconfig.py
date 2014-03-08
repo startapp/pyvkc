@@ -3,6 +3,8 @@
 
 import os
 import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 CSD=os.path.split(os.path.realpath(sys.argv[0]))[0]
 print 'Config: ', CSD
