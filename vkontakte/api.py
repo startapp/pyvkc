@@ -135,7 +135,7 @@ class _API(object):
         #some vodka for my abstinent code...
             if int(data['error']['error_code']) == 5:
                 import re
-                s=re.findall('\'.+\'', data['error']['error_msg'])[0][1:-1]
+                s=re.findall('\'.+\'', data['error']['error_msg'], re.DOTALL)[0][1:-1]
                 sig=md5(s+self.api_secret).hexdigest()
                 return self._get(method, timeout=DEFAULT_TIMEOUT, sig = sig, **kwargs)
             else:
@@ -175,10 +175,10 @@ class _API(object):
                     'captcha_sid': csid,
                     'captcha_key': ckey
                 })
-                return self.__call__(sig, **kwargs)
+                return self.__call__(sig, method=method, **kwargs)
             if int(e.code)==6:
                 time.sleep(1)
-                return self.__call__(sig, **kwargs)
+                return self.__call__(sig, method=method, **kwargs)
             raise
 
     def _signature(self, meth, params):

@@ -7,6 +7,7 @@ import os
 import tkFileDialog
 from vkontakte.api import json
 import codecs
+import time
 CAN_UPLOAD=1
 try: import requests as r
 except: CAN_UPLOAD = 0
@@ -75,6 +76,9 @@ def upload(url, ff, fn):
 	try: res = _res.text
 	except: res = _res.content #REQUESTS V0.9 COMPATIBILITY
 	return res
+
+def ftime(mtime):
+	return time.strftime(TIME_FORMAT, time.localtime(mtime))
 
 FPICKER = TkFilePicker()
 DM = BuiltinDManager()

@@ -157,9 +157,8 @@ class StatusWindow:
 		self.st_wnd.destroy()
 
 class BigJoint:
-	def __init__(self, cmd='main', *args):
-		self.cmd = cmd
-		print cmd
+	def __init__(self, Z='main', *args):
+		self.cmd = Z
 		self.args = args
 		self.wnd = Tk()
 		self.wnd.resizable(False, False)
@@ -426,32 +425,40 @@ class BigJoint:
 			info_25dimetoxy_4bromo_amphetamine = Label(info_frame, text=u'Дата рождения: '+user['bdate']) #DOB
 			info_25dimetoxy_4bromo_amphetamine.pack(anchor=W)
 
-	def cmd_photoupload(self, _uid, album=None, fname=None, attachments=''):
+	def cmd_photoupload(self, _uid, album=None, fname=None, attachments='', mode='std', callback=lambda: None):
 		if not fname: fname=helpers.FPICKER.open_file(title='Загрузить фото...')
-		if not album: return self.cmd_albums(_uid, mode='callback', callback=lambda x: self.cmd_photoupload(_uid, fname=fname, album=x
-))
+		if not album: return self.cmd_albums(_uid, mode='callback', callback=lambda x: self.cmd_photoupload(_uid, fname=fname, album=x))
 		aid = album['aid']
 		st_wnd = StatusWindow(self.wnd, title='Загрузка фото')
 		st_wnd.set('Заливаю %s в %s'%(fname, album['title']))
 		if aid=='wall': userver = self.agent.photos.getWallUploadServer()['upload_url']
+		elif aid=='pm': userver = self.agent.photos.getMessagesUploadServer()['upload_url']
 		else: userver = self.agent.photos.getUploadServer(aid=aid)['upload_url']
-		if aid=='wall': response = helpers.upload(userver, 'photo', fname)
-		else: response = helpers.upload(userver, 'photo', fname)
+		response = helpers.upload(userver, 'photo', fname)
 		res = helpers.json.loads(response, strict=False)
 		st_wnd.set('Сохранение...\n%s'%res)
 		if aid=='wall': res = self.agent.photos.saveWallPhoto(**res)[0]
+		elif aid=='pm': res = self.agent.photos.saveMessagesPhoto(**res)[0]
 		else: res = self.agent.photos.save(**res)[0]
-		if aid=='wall': self.agent.wall.post(attachments=res[u'id'])
 		st_wnd.destroy()
-		if self.cmd == 'photoupload': self.wnd.destroy()
+		if mode=='callback': callback(res)
+		else:
+			if aid=='wall': self.agent.wall.post(attachments=res[u'id'])
+			if self.cmd == 'photoupload': self.wnd.destroy()
 
-	def cmd_sendmsg(self, _uid):
+	def cmd_sendmsg(self, _uid, photo=0, attach='', rec=0, txt='', uid=0):
 		def cmd_ok():
-			txt = msg_tb.get(0.0, END)
-			print 'MSG:',txt
-			self.agent.messages.send(uid=uid, message=txt)
-			msg_wnd.destroy()
-
+			global txt, photo
+			if not rec: txt = msg_tb.get(0.0, END)
+			if not rec: photo = phVar.get()
+			print 'MSG:', txt
+			if photo and not attach:
+				self.cmd_photoupload(_uid=_uid, album={'aid':'pm', 'title':'Личка '+_uid}, mode='callback', callback=lambda x: self.cmd_sendmsg(_uid, photo=1, attach=x['id'], rec=1, txt=txt, uid=uid))
+				msg_wnd.destroy()
+			self.agent.messages.send(uid=uid, message=txt, attachment=attach)
+			if not rec: msg_wnd.destroy()
+		if rec:
+			return cmd_ok()
 		uid = _nti(_uid)
 		msg_wnd = Toplevel(self.wnd)
 		msg_wnd.resizable(False, False)
@@ -463,9 +470,13 @@ class BigJoint:
 		msg_scrollbar.config(command=msg_tb.yview)
 		msg_scrollbar.pack(side=RIGHT, fill=Y)
 		msg_tb.pack(side=LEFT, fill=BOTH, expand=1)
+		phVar = IntVar()
+		phVar.set(photo)
 		buttons_frame = Frame(msg_wnd)
+		ph_cb = Checkbutton(buttons_frame, text=u'Прикрепить фото', variable=phVar)
+		ph_cb.grid(row=1, column=1, sticky='w')
 		snd_btn = Button(buttons_frame, text=u'Ок', command=lambda: cmd_ok())
-		snd_btn.grid(row=1, column=1)
+		snd_btn.grid(row=2, column=1, sticky='nesw')
 		buttons_frame.pack(side=BOTTOM)
 
 	def _getmsghist(self, uid, printname, status_cb=lambda:None, **kwargs):
@@ -484,10 +495,11 @@ class BigJoint:
 			curr += 200
 			status_cb(loaded_cnt, count)
 			for m in msgs:
+				stime = helpers.ftime(m['date'])
 				if m['out']:
-					buf+=u'Я> %s\n'%(m['body'])	
+					buf+=u'%s Я: %s\n'%(stime, m['body'])	
 				else:
-					buf+=u'%s> %s\n'%(printname, m['body'])
+					buf+=u'%s %s: %s\n'%(stime, printname, m['body'])
 		return _emojidel(buf)
 
 	def cmd_showhist(self, _uid, all=0):
@@ -503,10 +515,12 @@ class BigJoint:
 			count = len(FDICT.keys())
 			curr = 0
 			for name, uid in FDICT.iteritems():
-				curr += 1
-				hist_sw.set('Сохраняю - %s (%d/%d)'%(name, curr, count))
-				history = self._getmsghist(uid, name, rev=1, status_cb=lambda x, x2: hist_sw.set('Сохраняю - %s (%d/%d), %d/%d...'%(name, curr, count, x, x2)))
-				save(fn=savedir+'/'+name+'.txt', history=history)
+				try:
+					curr += 1
+					hist_sw.set('Сохраняю - %s (%d/%d)'%(name, curr, count))
+					history = self._getmsghist(uid, name, rev=1, status_cb=lambda x, x2: hist_sw.set('Сохраняю - %s (%d/%d), %d/%d...'%(name, curr, count, x, x2)))
+					save(fn=savedir+'/'+name+'.txt', history=history)
+				except: continue
 			hist_sw.destroy()
 		uid = _nti(_uid)
 		if all: return save_all()
@@ -585,7 +599,6 @@ class BigJoint:
 		drCb.grid(row=3, column=1, columnspan=2)
 		snd_btn.grid(row=5, column=1, columnspan=2)
 		buttons_frame.pack(side=BOTTOM)
-
 
 if USE_API_RELAY:
 	vkontakte.api.RELAY_SOCK = socket.socket()

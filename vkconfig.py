@@ -44,7 +44,7 @@ SAVE_SIZE = 'src_big'
 EXTRA_FUNC = int(read())
 
 #Работа через промежуточный сервер.
-USE_API_RELAY = 1
+USE_API_RELAY = 0
 RELAY_ADDR = 'startapp.mooo.com'
 RELAY_PORT = 30047
 
@@ -53,6 +53,8 @@ OPEN_OSSF = 0
 OPEN_METHOD = read()
 print 'OM=', repr(OPEN_METHOD)
 OPEN_TMPDIR = os.path.join(CSD, 'opentmp', '')
+
+TIME_FORMAT = '%d.%m.%y %H:%M'
 
 DEBUG=1
 
