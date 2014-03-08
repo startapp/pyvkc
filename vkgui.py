@@ -431,17 +431,21 @@ class BigJoint:
 		snd_btn.grid(row=1, column=1)
 		buttons_frame.pack(side=BOTTOM)
 
-	def _getmsghist(self, uid, printname, **kwargs):
+	def _getmsghist(self, uid, printname, status_cb=lambda:None, **kwargs):
 		buf = u''
 		msgs = self.agent.messages.getHistory(uid=uid, offset=0, **kwargs)
 		count = msgs[0]
 		curr=0
 		buf += u'Переписка с %s, uid=%d, всего %d сообщений.\n'%(printname, uid, count)
+		loaded_cnt = 0
 		while curr<count:
 			msgs = self.agent.messages.getHistory(uid=uid, offset=curr, count=200, **kwargs)
 			msgs = msgs[1:]
-			buf += u'OFFSET %d:\n'%(curr)
+			currcount = len(msgs)
+			loaded_cnt += currcount
+			buf += u'OFFSET %d, %d сообщений:\n'%(curr, currcount)
 			curr += 200
+			status_cb(loaded_cnt, count)
 			for m in msgs:
 				if m['out']:
 					buf+=u'Я> %s\n'%(m['body'])	
@@ -456,6 +460,10 @@ class BigJoint:
 			f.write(msgh_tb.get(0.0, END))
 			f.close()
 		uid = _nti(_uid)
+		hist_sw=StatusWindow(self.wnd, title='Переписка с %s'%_uid)
+		hist_sw.set('Загружаю сообщения...')
+		history = self._getmsghist(uid, _uid, rev=1, status_cb=lambda x, x2: hist_sw.set('Загужено %s/%s сообщений...'%(x, x2)))
+		hist_sw.destroy()
 		msg_wnd = Toplevel(self.wnd)
 		msg_wnd.resizable(False, False)
 		msg_wnd.title(u'Переписка с %s - %s'%(_uid, MY_APPNAME))
@@ -466,7 +474,7 @@ class BigJoint:
 		msgh_scrollbar.config(command=msgh_tb.yview)
 		msgh_scrollbar.pack(side=RIGHT, fill=Y)
 		msgh_tb.pack(side=LEFT, fill=BOTH, expand=1)
-		msgh_tb.insert(END, self._getmsghist(uid, _uid, rev=1))
+		msgh_tb.insert(END, history)
 		buttons_frame = Frame(msg_wnd)
 		save_btn = Button(buttons_frame, text='Сохранить', command=lambda: save())
 		save_btn.pack(side=LEFT)
@@ -474,6 +482,9 @@ class BigJoint:
 
 	def cmd_sendmsgtoall(self):
 		def cmd_ok():
+			msg_wnd.destroy()
+			status = StatusWindow(self.wnd, 'Рассылка')
+			status.set('Подготовка к отправке...')
 			modeGS = gsVar.get()
 			modeG = gVar.get()
 			modeB = bVar.get()
@@ -484,7 +495,7 @@ class BigJoint:
 			print 'modeGS=',modeGS, ';modeB=',modeB, ';modeG=',modeG, ';drFlag=',drFlag, ';delay=',delay
 			users = self.agent.users.get(user_ids=(','.join(map(str, FDICT.values()))), fields='sex,bdate,city,country,photo_50,photo_100,photo_200_orig,photo_200,photo_400_orig,photo_max,photo_max_orig,online,online_mobile,lists,domain,has_mobile,contacts,connections,site,education,universities,schools,can_post,can_see_all_posts,can_see_audio,can_write_private_message,status,last_seen,common_count,relation,relatives,counters')
 			for user in users:
-				print 'Checking: (',user['uid'],') -',_dtpn(user)
+				status.set('Проверяю соответствие для %s, uid=%d'%(_dtpn(user), user['uid']))
 				sndFlag = 0
 				if modeGS:
 					if modeG and user['sex']==1: sndFlag=1
@@ -495,8 +506,7 @@ class BigJoint:
 				if sndFlag and not drFlag:
 					self.agent.messages.send(uid=user['uid'], message=txt)
 					time.sleep(delay)
-			msg_wnd.destroy()
-
+			status.destroy()
 		msg_wnd = Toplevel(self.wnd)
 		msg_wnd.resizable(False, False)
 		msg_wnd.title(u'Рассылка - %s'%(MY_APPNAME))
