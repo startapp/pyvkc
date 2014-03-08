@@ -71,8 +71,9 @@ def upload(url, ff, fn):
 		_k, _v = _d.split('=')
 		print _k, ' =', _v
 		data.append((_k, _v))
-	res = r.post(urlparts[0]+'://'+urlparts[1]+'/'+urlparts[2], data, files={ff: (fn, f)}).text
-	print res
+	_res = r.post(urlparts[0]+'://'+urlparts[1]+'/'+urlparts[2], data, files={ff: (fn, f)})
+	try: res = _res.text
+	except: res = _res.content #REQUESTS V0.9 COMPATIBILITY
 	return res
 
 FPICKER = TkFilePicker()

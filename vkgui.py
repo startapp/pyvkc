@@ -295,7 +295,7 @@ class BigJoint:
 			dwnall_btn = Button(buttons_frame, text=u'Скачать', command=lambda: self.download_album(uid, dalbums[alb_listbox.get(ACTIVE)]))
 			dwnall_btn.grid(row=1, column=2)
 			upl_btn = Button(buttons_frame, text=u'Выставить', command=lambda: self.cmd_photoupload(uid, album=dalbums[alb_listbox.get(ACTIVE)]))
-			if uid==_nti(u'Я'): upl_btn.grid(row=2, column=1, columnspan=2, sticky='nesw')
+			if uid==_nti(u'Я') and helpers.CAN_UPLOAD: upl_btn.grid(row=2, column=1, columnspan=2, sticky='nesw')
 			if EXTRA_FUNC:
 				lkall_btn = Button(buttons_frame, text=u'Лайкнуть все фотки', command=lambda: like_all(dalbums[alb_listbox.get(ACTIVE)]))
 				lkall_btn.grid(row=3, column=1, columnspan=2, sticky='nesw')
@@ -428,13 +428,13 @@ class BigJoint:
 		if aid=='wall': userver = self.agent.photos.getWallUploadServer()['upload_url']
 		else: userver = self.agent.photos.getUploadServer(aid=aid)['upload_url']
 		if aid=='wall': response = helpers.upload(userver, 'photo', fname)
-		else: response = helpers.upload(userver, 'photo1', fname)
+		else: response = helpers.upload(userver, 'photo', fname)
 		res = helpers.json.loads(response, strict=False)
 		st_wnd.set('Сохранение...\n%s'%res)
 		if aid=='wall': res = self.agent.photos.saveWallPhoto(**res)
 		else: res = self.agent.photos.save(**res)
 		
-		if aid=='wall': self.agent.wall.post(attachments=res['id'])
+		if aid=='wall': self.agent.wall.post(attachments=res[u'id'])
 		st_wnd.destroy()
 
 	def cmd_sendmsg(self, _uid):
