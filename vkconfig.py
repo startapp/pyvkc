@@ -3,7 +3,9 @@
 
 import os
 
-config_filename = 'vkconfig.txt'
+CSD=os.path.split(__file__)[0]
+print CSD
+config_filename = os.path.join(CSD, 'vkconfig.txt')
 config = open(config_filename, 'r')
 
 def read():
@@ -24,7 +26,7 @@ PASS = read()
 APPID = '3715935'
 
 USE_PNM = int(read())
-PNM_TEMP = os.getcwd()+'/pnm/'
+PNM_TEMP = os.path.join(CSD, 'pnm', '')
 #PNM_TEMP = '\\Storage Card\\PNM\\' #Для WinCE - полные пути.
 #Максимальна ширина окна профиля если без фото.
 INFO_MAX_WIDTH=350
@@ -49,7 +51,7 @@ OPEN_XDG = 0
 OPEN_OSSF = 0
 OPEN_METHOD = read()
 print 'OM=', repr(OPEN_METHOD)
-OPEN_TMPDIR = os.path.join(os.getcwd(), 'opentmp', '')
+OPEN_TMPDIR = os.path.join(CSD, 'opentmp', '')
 
 DEBUG=1
 

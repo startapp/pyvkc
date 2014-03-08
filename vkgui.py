@@ -4,6 +4,7 @@
 MY_APPNAME = 'PyVKC'
 
 from Tkinter import *
+import os
 def configure():
 	def apply():
 		login = cwnd.login.get()
@@ -11,7 +12,9 @@ def configure():
 		pnm = cwnd.pnm.get()
 		extf = cwnd.extf.get()
 		openm = cwnd.openvar.get()
-		f = open('vkconfig.txt', 'w')
+		CSD=os.path.split(__file__)[0]
+		config_filename = os.path.join(CSD, 'vkconfig.txt')
+		f = open(config_filename, 'w')
 		f.write('#Не меняйте строки местами!\n%s #login\n%s #password\n%d #image to pnm\n%d #extra functions\n%s #open method\n'%(login, passw, pnm, extf, openm))
 		f.close()
 		cwnd.destroy()
@@ -217,6 +220,12 @@ class BigJoint:
 
 	def friends_init(self):
 		global FDICT
+		FDICT = {u'Я': int(self.uid)}
+		if self.cmd=='photoupload':
+			self.wnd.withdraw()
+			filename = self.args[0]
+			print 'UPLOAD: ', filename
+			return self.cmd_photoupload(u'Я', fname=filename)
 		self.friends_frame = Frame(self.wnd)
 		self.friends_scrollbar = Scrollbar(self.friends_frame, orient=VERTICAL)
 		self.friends_listbox = Listbox(self.friends_frame, yscrollcommand=self.friends_scrollbar.set)
@@ -224,7 +233,6 @@ class BigJoint:
 		self.friends_scrollbar.pack(side=RIGHT, fill=Y)
 		self.friends_listbox.pack(side=LEFT, fill=BOTH, expand=1)
 		self.friends = self.agent.friends.get(fields="uid,first_name,last_name", order="hints")
-		FDICT = {u'Я': int(self.uid)}
 		self.friends_listbox.insert(END, u'Я')
 		for f in self.friends:
 			fn = f['first_name']+' '+f['last_name']
@@ -420,7 +428,7 @@ class BigJoint:
 
 	def cmd_photoupload(self, _uid, album=None, fname=None, attachments=''):
 		if not fname: fname=helpers.FPICKER.open_file(title='Загрузить фото...')
-		if not album: album = self.cmd_albums(mode='callback', callback=lambda x: self.cmd_photoupload(_uid, fname=fname, album=x
+		if not album: return self.cmd_albums(_uid, mode='callback', callback=lambda x: self.cmd_photoupload(_uid, fname=fname, album=x
 ))
 		aid = album['aid']
 		st_wnd = StatusWindow(self.wnd, title='Загрузка фото')
@@ -431,11 +439,11 @@ class BigJoint:
 		else: response = helpers.upload(userver, 'photo', fname)
 		res = helpers.json.loads(response, strict=False)
 		st_wnd.set('Сохранение...\n%s'%res)
-		if aid=='wall': res = self.agent.photos.saveWallPhoto(**res)
-		else: res = self.agent.photos.save(**res)
-		
+		if aid=='wall': res = self.agent.photos.saveWallPhoto(**res)[0]
+		else: res = self.agent.photos.save(**res)[0]
 		if aid=='wall': self.agent.wall.post(attachments=res[u'id'])
 		st_wnd.destroy()
+		if self.cmd == 'photoupload': self.wnd.destroy()
 
 	def cmd_sendmsg(self, _uid):
 		def cmd_ok():
