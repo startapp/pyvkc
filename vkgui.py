@@ -154,7 +154,7 @@ class StatusWindow:
 	def destroy(self):
 		self.st_wnd.destroy()
 
-class GovnoMaydannoe:
+class BigJoint:
 	def __init__(self, Z='main', *args):
 		self.cmd = Z
 		self.args = args
@@ -223,6 +223,14 @@ class GovnoMaydannoe:
 			filename = self.args[0]
 			print 'UPLOAD: ', filename
 			return self.cmd_photoupload(u'Я', fname=filename)
+		if self.cmd=='sendmsg':
+			self.wnd.withdraw()
+			uid = self.args[0]
+			print 'To:', uid
+			txt = sys.stdin.read()
+			print '\n', txt
+			self.cmd_sendmsg(_uid=uid, txt=txt, rec=1)
+			self.wnd.destroy()
 		self.friends_frame = Frame(self.wnd)
 		self.friends_scrollbar = Scrollbar(self.friends_frame, orient=VERTICAL)
 		self.friends_listbox = Listbox(self.friends_frame, yscrollcommand=self.friends_scrollbar.set)
@@ -253,7 +261,9 @@ class GovnoMaydannoe:
 				self.sendall_btn.grid(row=4, column=1, sticky='nesw')
 				self.histall_btn = Button(self.buttons_frame, text=u'Сохранить все переписки', command=lambda: self.cmd_showhist(self.friends_listbox.get(ACTIVE), all=1))
 				self.histall_btn.grid(row=4, column=2, sticky='nesw')
-		self.buttons_frame.pack()
+				self.bdmap_btn = Button(self.buttons_frame, text=u'Сохранить дни рождения', command=lambda: self.cmd_bdmap())
+				self.bdmap_btn.grid(row=5, column=1, columnspan=2, sticky='nesw')
+			self.buttons_frame.pack()
 
 	def download_album(self, uid, album):
 			photos = _get_album_photos(self.agent, album['aid'], uid)
@@ -393,7 +403,6 @@ class GovnoMaydannoe:
 		btn_frame.pack()
 		change_page(1)
 
-
 	def cmd_info(self, uid=''):
 		uid = _nti(uid)
 		user = self.agent.users.get(user_ids=uid, fields='sex,bdate,city,country,photo_50,photo_100,photo_200_orig,photo_200,photo_400_orig,photo_max,photo_max_orig,online,online_mobile,lists,domain,has_mobile,contacts,connections,site,education,universities,schools,can_post,can_see_all_posts,can_see_audio,can_write_private_message,status,last_seen,common_count,relation,relatives,counters')[0]
@@ -418,6 +427,9 @@ class GovnoMaydannoe:
 		#Статус
 		info_status = Label(info_frame, text=user['status'], wraplength=maxw, justify=LEFT)
 		info_status.pack(anchor=W)
+		#User id
+		info_uid = Label(info_frame, text='UID: %d'%user['uid'])
+		info_uid.pack(anchor=W)
 		#Дата рождения
 		if 'bdate' in user.keys():
 			info_25dimetoxy_4bromo_amphetamine = Label(info_frame, text=u'Дата рождения: '+user['bdate']) #DOB
@@ -444,20 +456,20 @@ class GovnoMaydannoe:
 			if aid=='wall': self.agent.wall.post(attachments=res[u'id'])
 			if self.cmd == 'photoupload': self.wnd.destroy()
 
-	def cmd_sendmsg(self, _uid, photo=0, attach='', rec=0, txt='', uid=0):
-		def cmd_ok():
-			global txt, photo
+	def cmd_sendmsg(self, _uid, photo=0, attach='', rec=0, txt='', uid=0, count=1):
+		def cmd_ok(rec=rec, photo=photo, txt=txt):
 			if not rec: txt = msg_tb.get(0.0, END)
 			if not rec: photo = phVar.get()
+			if not rec: count = int(cVar.get())
 			print 'MSG:', txt
 			if photo and not attach:
-				self.cmd_photoupload(_uid=_uid, album={'aid':'pm', 'title':'Личка '+_uid}, mode='callback', callback=lambda x: self.cmd_sendmsg(_uid, photo=1, attach=x['id'], rec=1, txt=txt, uid=uid))
+				self.cmd_photoupload(_uid=_uid, album={'aid':'pm', 'title':'Личка '+_uid}, mode='callback', callback=lambda x: self.cmd_sendmsg(_uid, photo=1, attach=x['id'], rec=1, txt=txt, uid=uid, count=count))
 				msg_wnd.destroy()
 			self.agent.messages.send(uid=uid, message=txt, attachment=attach)
 			if not rec: msg_wnd.destroy()
+		uid = _nti(_uid)
 		if rec:
 			return cmd_ok()
-		uid = _nti(_uid)
 		msg_wnd = Toplevel(self.wnd)
 		msg_wnd.resizable(False, False)
 		msg_wnd.title(u'Отправить %s - %s'%(_uid, MY_APPNAME))
@@ -470,11 +482,17 @@ class GovnoMaydannoe:
 		msg_tb.pack(side=LEFT, fill=BOTH, expand=1)
 		phVar = IntVar()
 		phVar.set(photo)
+		cVar = StringVar()
+		cVar.set(str(count))
 		buttons_frame = Frame(msg_wnd)
 		ph_cb = Checkbutton(buttons_frame, text=u'Прикрепить фото', variable=phVar)
-		ph_cb.grid(row=1, column=1, sticky='w')
+		ph_cb.grid(row=1, column=1, sticky='w', columnspan=2)
+		c_en = Entry(buttons_frame, textvariable=cVar)
+		c_en.grid(row=2, column=2, sticky='w')
+		c_lbl = Label(buttons_frame, text=u'Кол-во повторов:')
+		c_lbl.grid(row=2, column=1, sticky='e')
 		snd_btn = Button(buttons_frame, text=u'Ок', command=lambda: cmd_ok())
-		snd_btn.grid(row=2, column=1, sticky='nesw')
+		snd_btn.grid(row=3, column=1, columnspan=2, sticky='nesw')
 		buttons_frame.pack(side=BOTTOM)
 
 	def _getmsghist(self, uid, printname, status_cb=lambda:None, **kwargs):
@@ -598,6 +616,16 @@ class GovnoMaydannoe:
 		snd_btn.grid(row=5, column=1, columnspan=2)
 		buttons_frame.pack(side=BOTTOM)
 
+	def cmd_bdmap(self):
+		fname = helpers.FPICKER.save_one(title=u'Сохранить дни рождения', fn='bdates.txt')
+		fwr = open(fname, 'w')
+		users = self.agent.users.get(user_ids=(','.join(map(str, FDICT.values()))), fields='first_name,last_name,bdate,uid')
+		for user in users:
+			if 'bdate' in user:
+				fwr.write("%s\tuid=%d, bdate=%s\n"%(_dtpn(user), user['uid'], user['bdate']))
+
+
+
 if USE_API_RELAY:
 	vkontakte.api.RELAY_SOCK = socket.socket()
 	vkontakte.api.RELAY_SOCK.connect((RELAY_ADDR, RELAY_PORT))
@@ -607,4 +635,4 @@ if USE_API_RELAY:
 
 if __name__=='__main__':
 	FDICT = {}
-	bj = GovnoMaydannoe(*sys.argv[1:])
+	bj = BigJoint(*sys.argv[1:])

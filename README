@@ -1,4 +1,4 @@
-PyVKC 0.02.1 - Python VKontakte Client.
+PyVKC 0.02.3 - Python VKontakte Client.
 
 Кривая софтина для доступа к некоторым функциям соц.сети ВКонтакте.
 Переписки принципиально делать не буду - все равно сделать что-то хорошее не выйдет, лучше юзать транспорт vk4xmpp.
@@ -15,4 +15,5 @@ PyVKC 0.02.1 - Python VKontakte Client.
 * requests - для заливки фото на сайт
 
 Для загрузки фото выполнить команду '/путь/к/vkgui.py photoupload /путь/к/photo.jpg'
+Отправить сообщение - vkgui.py UID, текст в stdin
 

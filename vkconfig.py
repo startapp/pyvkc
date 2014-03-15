@@ -3,6 +3,7 @@
 
 import os
 import sys
+import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
