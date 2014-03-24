@@ -212,7 +212,6 @@ class BigJoint:
 		else:
 			print 'CAPTCHA -', img, '>'
 			return raw_input
-
 	def like_set(self, **kwargs):
 		il = int(self.agent.likes.isLiked(**kwargs))
 		if il==0:
@@ -342,6 +341,13 @@ class BigJoint:
 			view_btn = Button(buttons_frame, text=u'Ок', command=lambda: callback(dalbums[alb_listbox.get(ACTIVE)]))
 			view_btn.grid(row=1, column=1)
 
+	def cmd_comments(self, type='photo', title='Коменты', **kwargs):
+		comments = []
+		if type=='photo':
+			comments = self.agent.photos.getComments(pid=kwargs['photo']['pid'], owner_id=kwargs['photo']['owner_id'])[1:]
+		for c in comments:
+			print _itn(self.agent, c[u'from_id']), ':', c[u'message']
+
 	def cmd_photos(self, album, uid=None):
 		cpage=1
 		def photo_popup(event, photo):
@@ -355,7 +361,9 @@ class BigJoint:
 			open_btn=Button(popup, text='Открыть', command=lambda: cmdwrap(helpers.DM.open_user, photo[SAVE_SIZE]))
 			open_btn.pack()
 			like_btn = Button(popup, text='LIKE: %s'%str(self.agent.likes.isLiked(type='photo', item_id=photo['pid'], owner_id=photo['owner_id'])), command=lambda: cmdwrap(self.like_toggle, type='photo', item_id=photo['pid'], owner_id=photo['owner_id']))
+			comm_btn = Button(popup, text='Комментари', command=lambda: cmdwrap(self.cmd_comments, type='photo', photo=photo))
 			dwn_btn.pack()
+			if EXTRA_FUNC: comm_btn.pack()
 			like_btn.pack()
 
 		def next_page():
