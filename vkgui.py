@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 MY_APPNAME = 'PyVKC'
+USE_GUI=1
 
-from Tkinter import *
 import os
 def configure():
 	def apply():
@@ -67,7 +67,6 @@ if not USE_API_RELAY:
 else:
 	import socket
 import urllib2
-from PIL import Image, ImageTk
 from StringIO import StringIO
 import time
 import sys
@@ -94,10 +93,12 @@ def _get(url):
 	return u
 
 def load_image(url):
+	from PIL import Image
 	photo_stream = _get(url)
 	photo_file = StringIO(photo_stream.read())
 	photo_img = Image.open(photo_file)
 	if not USE_PNM:
+		from PIL import ImageTk
 		res = ImageTk.PhotoImage(photo_img)
 	else:
 		fname = PNM_TEMP+str(time.time())+'.ppm'
@@ -109,8 +110,10 @@ def load_image(url):
 
 def _nti(name):
 	try: return int(name)
-	except: pass
-	return FDICT[name]
+	except: return FDICT[name]
+def _itn(agent, uid):
+	u = agent.users.get(uids=uid)[0]
+	return _dtpn(u)
 
 def _get_user_albums(agent, name):
 	ssw = [{u'aid':u'profile', u'title': u'Фотографии со страницы'},
@@ -120,8 +123,8 @@ def _get_user_albums(agent, name):
 	ssw += agent.photos.getAlbums(uid=_nti(name))
 	return ssw
 
-def _get_album_photos(agent, aid, uid=None):
-	ssw = agent.photos.get(aid=aid, uid=uid)
+def _get_album_photos(agent, aid, uid=None, **kwargs):
+	ssw = agent.photos.get(aid=aid, uid=uid, **kwargs)
 	return ssw
 
 def auth():
@@ -136,41 +139,54 @@ def auth():
 		rsf.write(scope+'\n')
 		rsf.flush()
 		rld = rsf.readline().strip()
-		print rld
 		token, uid, secret = rld.split(' ')
 		agent = vkontakte.API()	
 	return token, uid, secret, agent
 
 class StatusWindow:
-	def __init__(self, parent, title='status'):
-		self.st_wnd = Toplevel(parent)
-		self.st_wnd.resizable(False, False)
-		self.st_wnd.title(title)
-		self.st_lbl = Label(self.st_wnd)
-		self.st_lbl.pack()
+	def __init__(self, parent=None, title='status'):
+		if USE_GUI:
+			self.st_wnd = Toplevel(parent)
+			self.st_wnd.resizable(False, False)
+			self.st_wnd.title(title)
+			self.st_lbl = Label(self.st_wnd)
+			self.st_lbl.pack()
 	def set(self, string):
-		self.st_lbl.config(text=string)
-		self.st_wnd.update()
+		if USE_GUI:
+			self.st_lbl.config(text=string)
+			self.st_wnd.update()
+		string
 	def destroy(self):
-		self.st_wnd.destroy()
+		if USE_GUI:
+			self.st_wnd.destroy()
 
 class BigJoint:
 	def __init__(self, Z='main', *args):
+		global USE_GUI
 		self.cmd = Z
 		self.args = args
-		self.wnd = Tk()
-		self.wnd.resizable(False, False)
-		self.wnd.title(MY_APPNAME)
-		self.curr = Label(self.wnd, text=u'Вхожу в vk.com')
-		self.curr.pack()
-		self.wnd.after(100, self.start)
-		self.wnd.mainloop()
+		if self.cmd == "nogui":
+			self.cmd = args[0]
+			args = args[1:]
+			USE_GUI=0
+		if USE_GUI:
+			self.wnd = Tk()
+			self.wnd.resizable(False, False)
+			self.wnd.title(MY_APPNAME)
+			self.curr = Label(self.wnd, text=u'Вхожу в vk.com')
+			self.curr.pack()
+			self.wnd.after(100, self.start)
+			self.wnd.mainloop()
+		else:
+			self.wnd = None
+			self.start()
 	def start(self):
 #		Все равно толку нет.
 #		try:
 			self.token, self.uid, self.secret, self.agent = auth()
 			self.agent.captcha_callback = self.show_captcha
-			self.curr.config(text=u'Вход успешен. uid=%s'%self.uid)
+			if USE_GUI:
+				self.curr.config(text=u'Вход успешен. uid=%s'%self.uid)
 			self.friends_init()
 #		except:
 			#return
@@ -179,19 +195,23 @@ class BigJoint:
 		def ok():
 			self.captcha_key = txt_entr.get().strip()
 			captcha_wnd.destroy()
-		captcha_wnd = Toplevel()
-		captcha_wnd.resizable(False, False)
-		image = load_image(img)
-		cp_label = Label(captcha_wnd, text=u'Введите текст с картинки:')
-		cp_label.pack(side=LEFT)
-		img_label = Label(captcha_wnd, image=image)
-		img_label.image = image
-		img_label.pack(side=BOTTOM)
-		txt_entr = Entry(captcha_wnd)
-		txt_entr.pack(side=BOTTOM, expand=1)
-		ok_btn = Button(captcha_wnd, text='Ок', command=lambda: ok())
-		self.wnd.wait_window(captcha_wnd)
-		return self.captcha_key
+		if USE_GUI:
+			captcha_wnd = Toplevel()
+			captcha_wnd.resizable(False, False)
+			image = load_image(img)
+			cp_label = Label(captcha_wnd, text=u'Введите текст с картинки:')
+			cp_label.pack(side=LEFT)
+			img_label = Label(captcha_wnd, image=image)
+			img_label.image = image
+			img_label.pack(side=BOTTOM)
+			txt_entr = Entry(captcha_wnd)
+			txt_entr.pack(side=BOTTOM, expand=1)
+			ok_btn = Button(captcha_wnd, text='Ок', command=lambda: ok())
+			self.wnd.wait_window(captcha_wnd)
+			return self.captcha_key
+		else:
+			print 'CAPTCHA -', img, '>'
+			return raw_input
 
 	def like_set(self, **kwargs):
 		il = int(self.agent.likes.isLiked(**kwargs))
@@ -199,7 +219,6 @@ class BigJoint:
 			self.agent.likes.add(**kwargs)
 	def like_set_all(self, type, owner_id, items):
 		for i in items:
-			print 'Like set to: '+type+str(i)
 			like_set(type=type, owner_id=owner_id, item_id=i)
 
 	def like_unset(self, **kwargs):
@@ -216,21 +235,27 @@ class BigJoint:
 		il = self.agent.likes.isLiked(**kwargs)
 
 	def friends_init(self):
+		global USE_GUI
 		global FDICT
 		FDICT = {u'Я': int(self.uid)}
 		if self.cmd=='photoupload':
-			self.wnd.withdraw()
+			if USE_GUI:
+				self.wnd.withdraw()
 			filename = self.args[0]
-			print 'UPLOAD: ', filename
 			return self.cmd_photoupload(u'Я', fname=filename)
 		if self.cmd=='sendmsg':
-			self.wnd.withdraw()
+			if USE_GUI:
+				self.wnd.withdraw()
 			uid = self.args[0]
-			print 'To:', uid
 			txt = sys.stdin.read()
-			print '\n', txt
 			self.cmd_sendmsg(_uid=uid, txt=txt, rec=1)
-			self.wnd.destroy()
+			if USE_GUI: self.wnd.destroy()
+		if self.cmd=='getmsg':
+			if USE_GUI:
+				USE_GUI=0
+				self.wnd.destroy()
+			print self.cmd_get_msg(mode=self.args[0])
+		if not USE_GUI: return
 		self.friends_frame = Frame(self.wnd)
 		self.friends_scrollbar = Scrollbar(self.friends_frame, orient=VERTICAL)
 		self.friends_listbox = Listbox(self.friends_frame, yscrollcommand=self.friends_scrollbar.set)
@@ -273,7 +298,6 @@ class BigJoint:
 			urls = []
 			for i in xrange(len(photos)):
 				urls+=[photos[i][SAVE_SIZE]]
-				print photos[i][SAVE_SIZE]
 				st.set('Создаю список ссылок... %d/%d.'%(i, count))
 			st.set('Начинаю закачку.')
 			helpers.DM.down_dir(urls, statusCb=lambda x: st.set('Загружаю %d/%d...'%(x+1, count)))
@@ -353,7 +377,6 @@ class BigJoint:
 				for j in xrange(0, PHOTOLIST_COLS):
 					try:
 					#if 1:
-						print i, j, ':', page, i*PHOTOLIST_COLS+j
 						photos_grid[i][j].photo = load_image(pages[page][i*PHOTOLIST_COLS+j][PHOTOLIST_SIZE])
 						photos_grid[i][j].photo_def = pages[page][i*PHOTOLIST_COLS+j]
 						photos_grid[i][j].config(image = photos_grid[i][j].photo)
@@ -371,7 +394,7 @@ class BigJoint:
 		alb_wnd.title('Альбом %s - %s'%(album['title'], MY_APPNAME))
 		alb_frame = Frame(alb_wnd)
 		alb_frame.pack(side=TOP, fill=BOTH)
-		photos = _get_album_photos(self.agent, aid, uid)
+		photos = _get_album_photos(self.agent, aid, uid, rev=1)
 		if len(photos)==0:
 			no_lbl = Label(alb_frame, text=u'Нет фотографий')
 			no_lbl.pack()
@@ -380,7 +403,6 @@ class BigJoint:
 		for i in xrange(0, PHOTOLIST_ROWS):
 			photos_grid += [[]]
 			for j in xrange(0, PHOTOLIST_COLS):
-				print i, j
 				photos_grid[i] += [Label(alb_frame)]
 				photos_grid[i][j].grid(row=i, column=j)
 		page_capacity = PHOTOLIST_ROWS*PHOTOLIST_COLS
@@ -391,7 +413,6 @@ class BigJoint:
 			for j in xrange(0, page_capacity):
 				try:
 					pages[i] += [photos[i*page_capacity+j]]
-					print i, j, i*page_capacity+j
 				except: break
 		btn_frame = Frame(alb_wnd)
 		pp_btn = Button(btn_frame, text='<-', command=prev_page)
@@ -461,7 +482,6 @@ class BigJoint:
 			if not rec: txt = msg_tb.get(0.0, END)
 			if not rec: photo = phVar.get()
 			if not rec: count = int(cVar.get())
-			print 'MSG:', txt
 			if photo and not attach:
 				self.cmd_photoupload(_uid=_uid, album={'aid':'pm', 'title':'Личка '+_uid}, mode='callback', callback=lambda x: self.cmd_sendmsg(_uid, photo=1, attach=x['id'], rec=1, txt=txt, uid=uid, count=count))
 				msg_wnd.destroy()
@@ -562,17 +582,15 @@ class BigJoint:
 
 	def cmd_sendmsgtoall(self):
 		def cmd_ok():
-			msg_wnd.destroy()
+			if USE_GUI: msg_wnd.destroy()
 			status = StatusWindow(self.wnd, 'Рассылка')
 			status.set('Подготовка к отправке...')
 			modeGS = gsVar.get()
 			modeG = gVar.get()
 			modeB = bVar.get()
 			drFlag = drVar.get()
-			delay = 5
+			delay = 3
 			txt = msg_tb.get(0.0, END)
-			print 'Message: ', txt
-			print 'modeGS=',modeGS, ';modeB=',modeB, ';modeG=',modeG, ';drFlag=',drFlag, ';delay=',delay
 			users = self.agent.users.get(user_ids=(','.join(map(str, FDICT.values()))), fields='sex,bdate,city,country,photo_50,photo_100,photo_200_orig,photo_200,photo_400_orig,photo_max,photo_max_orig,online,online_mobile,lists,domain,has_mobile,contacts,connections,site,education,universities,schools,can_post,can_see_all_posts,can_see_audio,can_write_private_message,status,last_seen,common_count,relation,relatives,counters')
 			for user in users:
 				status.set('Проверяю соответствие для %s, uid=%d'%(_dtpn(user), user['uid']))
@@ -582,7 +600,6 @@ class BigJoint:
 					if modeB and user['sex']==2: sndFlag=1
 				else:
 					sndFlag=1
-				print 'sndFlag=',sndFlag
 				if sndFlag and not drFlag:
 					self.agent.messages.send(uid=user['uid'], message=txt)
 					time.sleep(delay)
@@ -624,15 +641,26 @@ class BigJoint:
 			if 'bdate' in user:
 				fwr.write("%s\tuid=%d, bdate=%s\n"%(_dtpn(user), user['uid'], user['bdate']))
 
-
+	def cmd_get_msg(self, mode):
+		if mode=='unread_count':
+			return self.agent.messages.get(filters=1, out=0)[0]
+		if mode=='last':
+			msg = self.agent.messages.get(count=1, out=0)[1]
+			return '%s - %s'%(_itn(self.agent, msg['uid']), msg['body'])
 
 if USE_API_RELAY:
 	vkontakte.api.RELAY_SOCK = socket.socket()
 	vkontakte.api.RELAY_SOCK.connect((RELAY_ADDR, RELAY_PORT))
 	vkontakte.api.RELAY_SOCK_FILE = vkontakte.api.RELAY_SOCK.makefile()
 	RELAY_SOCK_FILE = vkontakte.api.RELAY_SOCK_FILE
-	print "Using relay server: "+RELAY_SOCK_FILE.readline()
 
 if __name__=='__main__':
 	FDICT = {}
-	bj = BigJoint(*sys.argv[1:])
+	args = sys.argv[1:]
+	try:
+		if args[0] == 'nogui':
+			USE_GUI=0
+			args = args[1:]
+		else: from Tkinter import *
+	except: from Tkinter import *
+	bj = BigJoint(*args)
