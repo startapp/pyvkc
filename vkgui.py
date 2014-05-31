@@ -93,6 +93,7 @@ def _get(url):
 	return u
 
 def load_image(url):
+	global ROOT_WND
 	from PIL import Image
 	photo_stream = _get(url)
 	photo_file = StringIO(photo_stream.read())
@@ -169,24 +170,23 @@ class BigJoint:
 			self.cmd = args[0]
 			args = args[1:]
 			USE_GUI=0
-		if USE_GUI:
-			self.wnd = Tk()
-			self.wnd.resizable(False, False)
-			self.wnd.title(MY_APPNAME)
-			self.curr = Label(self.wnd, text=u'Вхожу в vk.com')
-			self.curr.pack()
-			self.wnd.after(100, self.start)
-			self.wnd.mainloop()
-		else:
-			self.wnd = None
+		if 1:
+			#self.wnd = Tk()
+#			self.wnd.resizable(False, False)
+			#self.wnd.title(MY_APPNAME)
+			#self.curr = Label(self.wnd, text=u'Вхожу в vk.com')
+			#self.curr.pack()
+			#self.wnd.after(100, self.start)
+			#self.wnd.mainloop()
+		#else:
+			#self.wnd = None
 			self.start()
 	def start(self):
 #		Все равно толку нет.
 #		try:
 			self.token, self.uid, self.secret, self.agent = auth()
 			self.agent.captcha_callback = self.show_captcha
-			if USE_GUI:
-				self.curr.config(text=u'Вход успешен. uid=%s'%self.uid)
+			#if USE_GUI: self.curr.config(text=u'Вход успешен. uid=%s'%self.uid)
 			self.friends_init()
 #		except:
 			#return
@@ -234,9 +234,14 @@ class BigJoint:
 		il = self.agent.likes.isLiked(**kwargs)
 
 	def friends_init(self):
-		global USE_GUI
+		global USE_GUI, ROOT_WND
 		global FDICT
 		FDICT = {u'Я': int(self.uid)}
+		#self.wnd.withdraw()
+		self.wnd = Tk()
+		ROOT_WND=self.wnd
+#		self.wnd.resizable(False, False)
+		self.wnd.title(MY_APPNAME)
 		if self.cmd=='photoupload':
 			if USE_GUI:
 				self.wnd.withdraw()
@@ -267,7 +272,7 @@ class BigJoint:
 			fn = f['first_name']+' '+f['last_name']
 			FDICT[fn] = f['uid']
 			self.friends_listbox.insert(END, fn)
-		self.curr.destroy()
+		#self.curr.destroy()
 		self.friends_frame.pack(fill=X)
 		self.buttons_frame = Frame(self.wnd)
 		if self.cmd=='main':
@@ -288,6 +293,7 @@ class BigJoint:
 				self.bdmap_btn = Button(self.buttons_frame, text=u'Сохранить дни рождения', command=lambda: self.cmd_bdmap())
 				self.bdmap_btn.grid(row=5, column=1, columnspan=2, sticky='nesw')
 			self.buttons_frame.pack()
+			self.wnd.mainloop()
 
 	def download_album(self, uid, album):
 			photos = _get_album_photos(self.agent, album['aid'], uid)
@@ -311,7 +317,7 @@ class BigJoint:
 
 		uid = _nti(_uid)
 		alb_wnd = Toplevel(self.wnd)
-		alb_wnd.resizable(False, False)
+#		alb_wnd.resizable(False, False)
 		alb_wnd.title(u'Альбомы %s - %s'%(_uid, MY_APPNAME))
 		alb_frame = Frame(alb_wnd)
 		alb_frame.pack(side=TOP, fill=BOTH)
@@ -436,7 +442,7 @@ class BigJoint:
 		uid = _nti(uid)
 		user = self.agent.users.get(user_ids=uid, fields='sex,bdate,city,country,photo_50,photo_100,photo_200_orig,photo_200,photo_400_orig,photo_max,photo_max_orig,online,online_mobile,lists,domain,has_mobile,contacts,connections,site,education,universities,schools,can_post,can_see_all_posts,can_see_audio,can_write_private_message,status,last_seen,common_count,relation,relatives,counters')[0]
 		info_wnd = Toplevel(self.wnd)
-		info_wnd.resizable(False, False)
+		#info_wnd.resizable(False, False)
 		info_wnd.title(u'%s - %s'%(_dtpn(user), MY_APPNAME))
 		info_frame = Frame(info_wnd)
 		info_frame.pack()
@@ -444,12 +450,12 @@ class BigJoint:
 		#Аватарка
 		if SHOW_IMAGES:
 			photo_lbl = Label(info_frame, text=u'Загружаю...')
-			photo_lbl.pack(anchor=S)
 			self.wnd.update()
 			photo = load_image(user[PROFILE_PHOTO])
 			photo_lbl.config(image=photo)
 			photo_lbl.photo = photo
 			maxw = photo.width()
+			photo_lbl.pack(anchor=S)
 		#Имя
 		info_name = Label(info_frame, text=_dtpn(user))
 		info_name.pack(anchor=W)
@@ -544,7 +550,7 @@ class BigJoint:
 					buf+=u'%s Я: %s\n'%(stime, m['body'])	
 				else:
 					buf+=u'%s %s: %s\n'%(stime, printname, m['body'])
-		return _emojidel(buf)
+		return _emojidel(buf).replace('<br>', '\n'+(' '*8))
 
 	def cmd_showhist(self, _uid, all=0):
 		def save(history, fn=''):
