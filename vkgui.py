@@ -216,6 +216,7 @@ class BigJoint:
 		il = int(self.agent.likes.isLiked(**kwargs))
 		if il==0:
 			self.agent.likes.add(**kwargs)
+			print 'LIKE: '+repr(kwargs)
 	def like_set_all(self, type, owner_id, items):
 		for i in items:
 			like_set(type=type, owner_id=owner_id, item_id=i)
@@ -302,8 +303,14 @@ class BigJoint:
 			st.set('Создаю список ссылок... Всего %d файлов.'%count)
 			urls = []
 			for i in xrange(len(photos)):
-				urls+=[photos[i][SAVE_SIZE]]
-				st.set('Создаю список ссылок... %d/%d.'%(i, count))
+			  SAVE_SIZE='src_big'
+			  print photos[i]
+			  for j in xrange(1, len(SAVE_SIZES)+1):
+			    if SAVE_SIZES[j] in photos[i].keys(): SAVE_SIZE=SAVE_SIZES[j]
+			  print 'SIZE is', SAVE_SIZE
+			  print photos[i][SAVE_SIZE]
+			  urls+=[photos[i][SAVE_SIZE]]
+			  st.set('Создаю список ссылок... %d/%d.'%(i, count))
 			st.set('Начинаю закачку.')
 			helpers.DM.down_dir(urls, statusCb=lambda x: st.set('Загружаю %d/%d...'%(x+1, count)))
 			st.destroy()
@@ -363,6 +370,12 @@ class BigJoint:
 			popup = Toplevel(alb_wnd)
 			popup.title('Фото')
 			popup.resizable(False, False)
+			print photo
+			SAVE_SIZE='src_big'
+			for i in xrange(1, len(SAVE_SIZES)+1):
+			  print "probe="+SAVE_SIZES[i]
+			  if SAVE_SIZES[i] in photo.keys(): SAVE_SIZE=SAVE_SIZES[i]
+			print "DOWNLOAD SIZE is "+SAVE_SIZE
 			dwn_btn=Button(popup, text='Скачать', command=lambda: cmdwrap(helpers.DM.down_file, photo[SAVE_SIZE]))
 			open_btn=Button(popup, text='Открыть', command=lambda: cmdwrap(helpers.DM.open_user, photo[SAVE_SIZE]))
 			open_btn.pack()
