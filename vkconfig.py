@@ -57,6 +57,8 @@ TIME_FORMAT = '%d.%m.%y %H:%M'
 
 MESSAGE_NOTIFY = read()
 
+MESSAGE_PROBE_INTERVAL = read()
+
 DEBUG=1
 
 #make tmp dirs

@@ -13,10 +13,11 @@ def configure():
 		extf = cwnd.extf.get()
 		openm = cwnd.openvar.get()
 		notifycmd = cwnd.notifycmd.get()
+		probeinterval = '30' #TODO: NO HARDCODE!!!
 		CSD=os.path.split(os.path.realpath(sys.argv[0]))[0]
 		config_filename = os.path.join(CSD, 'vkconfig.txt')
 		f = open(config_filename, 'w')
-		f.write('#Не меняйте строки местами!\n%s #login\n%s #password\n%d #image to pnm\n%d #extra functions\n%s #open method\n%s #notify cmd\n'%(login, passw, pnm, extf, opem, notifycmd))
+		f.write('#Не меняйте строки местами!\n%s #login\n%s #password\n%d #image to pnm\n%d #extra functions\n%s #open method\n%s #notify cmd\n%s #message probing interval\n'%(login, passw, pnm, extf, opem, notifycmd, probeinterval))
 		f.close()
 		cwnd.destroy()
 	cwnd = Tk()
@@ -691,8 +692,8 @@ class BigJoint:
 	def cmd_msg_notify(self):
 		while 1:
 			unread_cnt = self.cmd_get_msg('unread_count')
-			if unread_cnt > 0: os.popen(MESSAGE_NOTIFY)
-			time.sleep(1)
+			if unread_cnt > 0: os.popen(MESSAGE_NOTIFY) #TODO: WAIT FOR EXIT
+			time.sleep(MESSAGE_PROBE_INTERVAL)
 
 if USE_API_RELAY:
 	vkontakte.api.RELAY_SOCK = socket.socket()
