@@ -80,6 +80,7 @@ import sys
 import os
 import helpers
 import re
+from Tkinter import *
 
 LAST_SCOPETS = "friends,photos,messages,wall"
 
