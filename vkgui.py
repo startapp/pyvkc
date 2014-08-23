@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 MY_APPNAME = 'PyVKC'
@@ -12,10 +12,11 @@ def configure():
 		pnm = cwnd.pnm.get()
 		extf = cwnd.extf.get()
 		openm = cwnd.openvar.get()
+		notifycmd = cwnd.notifycmd.get()
 		CSD=os.path.split(os.path.realpath(sys.argv[0]))[0]
 		config_filename = os.path.join(CSD, 'vkconfig.txt')
 		f = open(config_filename, 'w')
-		f.write('#Не меняйте строки местами!\n%s #login\n%s #password\n%d #image to pnm\n%d #extra functions\n%s #open method\n'%(login, passw, pnm, extf, openm))
+		f.write('#Не меняйте строки местами!\n%s #login\n%s #password\n%d #image to pnm\n%d #extra functions\n%s #open method\n%s #notify cmd\n'%(login, passw, pnm, extf, opem, notifycmd))
 		f.close()
 		cwnd.destroy()
 	cwnd = Tk()
@@ -50,6 +51,11 @@ def configure():
 		rb = Radiobutton(cwnd, text=l, variable=cwnd.openvar, value=v)
 		row+=1
 		rb.grid(row=row, column=1, columnspan=2, sticky='w')
+	row+=1
+	cwnd._notifycmd = Label(cwnd, text='Команда нотификации о сообщени (vkgui nogui msgnotify): ')
+	cwnd._notifycmd.grid(row=row, column=1, sticky='w')
+	cwnd.notifycmd = Entry(cwnd)
+	cwnd.notifycmd.grid(row=row, column=2, sticky='we')
 	cwnd.ok = Button(cwnd, text='Сохранить', command=apply)
 	row += 1
 	cwnd.ok.grid(row=row, column=1, columnspan=2)
@@ -58,6 +64,7 @@ def configure():
 try:
 	from vkconfig import *
 except:
+	from Tkinter import *
 	configure()
 	from vkconfig import *
 
@@ -260,6 +267,11 @@ class BigJoint:
 				USE_GUI=0
 				self.wnd.destroy()
 			print self.cmd_get_msg(mode=self.args[0])
+		if self.cmd=='msgnotify':
+			if USE_GUI:
+				USE_GUI=0
+				self.wnd.destroy()
+			self.cmd_msg_notify()
 		if not USE_GUI: return
 		self.friends_frame = Frame(self.wnd)
 		self.friends_scrollbar = Scrollbar(self.friends_frame, orient=VERTICAL)
@@ -674,6 +686,12 @@ class BigJoint:
 		if mode=='last':
 			msg = self.agent.messages.get(count=1, out=0)[1]
 			return '%s - %s'%(_itn(self.agent, msg['uid']), msg['body'])
+
+	def cmd_msg_notify(self):
+		while 1:
+			unread_cnt = self.cmd_get_msg(unread_count)
+			if unread_cnt > 0: os.popen(MESSAGE_NOTIFY)
+			time.sleep(1)
 
 if USE_API_RELAY:
 	vkontakte.api.RELAY_SOCK = socket.socket()
