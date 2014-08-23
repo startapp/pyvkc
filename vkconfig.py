@@ -57,7 +57,7 @@ TIME_FORMAT = '%d.%m.%y %H:%M'
 
 MESSAGE_NOTIFY = read()
 
-MESSAGE_PROBE_INTERVAL = read()
+MESSAGE_PROBE_INTERVAL = float(read())
 
 DEBUG=1
 
