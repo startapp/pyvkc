@@ -690,7 +690,7 @@ class BigJoint:
 
 	def cmd_msg_notify(self):
 		while 1:
-			unread_cnt = self.cmd_get_msg(unread_count)
+			unread_cnt = self.cmd_get_msg('unread_count')
 			if unread_cnt > 0: os.popen(MESSAGE_NOTIFY)
 			time.sleep(1)
 
