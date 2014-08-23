@@ -55,6 +55,8 @@ OPEN_TMPDIR = os.path.join(CSD, 'opentmp', '')
 
 TIME_FORMAT = '%d.%m.%y %H:%M'
 
+NOTIFY_CMD = read()
+
 DEBUG=1
 
 #make tmp dirs
