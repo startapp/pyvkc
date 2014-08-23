@@ -55,7 +55,7 @@ OPEN_TMPDIR = os.path.join(CSD, 'opentmp', '')
 
 TIME_FORMAT = '%d.%m.%y %H:%M'
 
-NOTIFY_CMD = read()
+MESSAGE_NOTIFY = read()
 
 DEBUG=1
 
